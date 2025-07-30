@@ -30,8 +30,9 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       if (token) {
         try {
-          const response = await axios.get('http://localhost:5000/api/auth/me');
-          setUser(response.data);
+          const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/auth/me`);
+          // Ensure user object has id property
+          setUser({ ...response.data, id: response.data._id });
         } catch (error) {
           localStorage.removeItem('token');
           setToken(null);

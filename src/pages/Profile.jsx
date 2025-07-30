@@ -6,12 +6,15 @@ import PostCard from '../components/Posts/PostCard';
 import { User, Mail, GraduationCap, Calendar, Trophy, MessageCircle, ThumbsUp, Edit3 } from 'lucide-react';
 
 const Profile = () => {
-  const { id } = useParams();
+  const { id: urlId } = useParams();
   const { user: currentUser } = useAuth();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
+  
+  // Use currentUser.id if no ID is provided in URL
+  const id = urlId || currentUser?.id;
   const [editData, setEditData] = useState({
     name: '',
     year: '',
