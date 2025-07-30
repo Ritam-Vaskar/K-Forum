@@ -32,7 +32,7 @@ const Home = () => {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/posts', {
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/posts`, {
         params: {
           category: selectedCategory,
           search: searchTerm,
