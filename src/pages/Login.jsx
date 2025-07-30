@@ -26,7 +26,7 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', formData);
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/auth/login`, formData);
       login(response.data.user, response.data.token);
       toast.success('Login successful!');
       navigate('/');
@@ -46,7 +46,7 @@ const Login = () => {
               <LogIn className="w-8 h-8 text-white" />
             </div>
             <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-            <p className="text-gray-400">Sign in to your K-Connect account</p>
+            <p className="text-gray-400">Sign in to your K-Forum account</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">

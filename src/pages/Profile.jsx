@@ -27,7 +27,7 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/users/${id}`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/users/${id}`);
       setProfile(response.data);
       setEditData({
         name: response.data.name,
@@ -41,7 +41,7 @@ const Profile = () => {
 
   const fetchUserPosts = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/users/${id}/posts`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/users/${id}/posts`);
       setPosts(response.data.posts);
     } catch (error) {
       console.error('Error fetching user posts:', error);
@@ -53,7 +53,7 @@ const Profile = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put('http://localhost:5000/api/users/profile', editData);
+      const response = await axios.put(`${import.meta.env.VITE_BACKEND_API}/api/users/profile`, editData);
       setProfile({ ...profile, ...response.data });
       setEditMode(false);
     } catch (error) {

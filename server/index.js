@@ -25,7 +25,7 @@ app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/k-connect', {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/K-Forum', {
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
@@ -61,7 +61,7 @@ app.use('/api/admin', adminRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'K-Connect API is running!' });
+  res.json({ status: 'OK', message: 'K-Forum API is running!' });
 });
 
 const PORT = process.env.PORT || 5000;

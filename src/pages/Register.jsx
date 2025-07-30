@@ -51,7 +51,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/register', formData);
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/auth/register`, formData);
       setUserId(response.data.userId);
       setStep(2);
       toast.success('Registration successful! Check your email for OTP.');
@@ -67,7 +67,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/verify-otp', {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/auth/verify-otp`, {
         userId,
         otp
       });
@@ -91,7 +91,7 @@ const Register = () => {
                 <div className="w-16 h-16 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
                   <User className="w-8 h-8 text-white" />
                 </div>
-                <h1 className="text-3xl font-bold text-white mb-2">Join K-Connect</h1>
+                <h1 className="text-3xl font-bold text-white mb-2">Join K-Forum</h1>
                 <p className="text-gray-400">Create your student account</p>
               </div>
 

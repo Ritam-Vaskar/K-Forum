@@ -62,10 +62,10 @@ router.post('/register', async (req, res) => {
     const mailOptions = {
       from: process.env.EMAIL_USER,
       to: email,
-      subject: 'K-Connect Email Verification',
+      subject: 'K-Forum Email Verification',
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #17d059;">Welcome to K-Connect!</h2>
+          <h2 style="color: #17d059;">Welcome to K-Forum!</h2>
           <p>Your verification code is:</p>
           <h1 style="color: #17d059; font-size: 32px; letter-spacing: 5px;">${otp}</h1>
           <p>This code will expire in 10 minutes.</p>
@@ -107,7 +107,7 @@ router.post('/verify-otp', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id },
-      process.env.JWT_SECRET || 'k-connect-secret',
+      process.env.JWT_SECRET || 'K-Forum-secret',
       { expiresIn: '7d' }
     );
 
@@ -152,7 +152,7 @@ router.post('/login', async (req, res) => {
 
     const token = jwt.sign(
       { userId: user._id },
-      process.env.JWT_SECRET || 'k-connect-secret',
+      process.env.JWT_SECRET || 'K-Forum-secret',
       { expiresIn: '7d' }
     );
 

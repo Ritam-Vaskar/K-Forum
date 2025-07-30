@@ -16,7 +16,7 @@ const Admin = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/admin/stats');
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/admin/stats`);
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -25,7 +25,7 @@ const Admin = () => {
 
   const fetchReportedPosts = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/admin/reported-posts');
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/admin/reported-posts`);
       setReportedPosts(response.data);
     } catch (error) {
       console.error('Error fetching reported posts:', error);
@@ -36,7 +36,7 @@ const Admin = () => {
 
   const handleModeratePost = async (postId, action) => {
     try {
-      await axios.post(`http://localhost:5000/api/admin/moderate-post/${postId}`, { action });
+      await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/admin/moderate-post/${postId}`, { action });
       fetchReportedPosts();
     } catch (error) {
       console.error('Error moderating post:', error);
@@ -61,7 +61,7 @@ const Admin = () => {
             <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
           </div>
           <p className="text-gray-400">
-            Welcome back, {user.name}. Manage the K-Connect community effectively.
+            Welcome back, {user.name}. Manage the K-Forum community effectively.
           </p>
         </div>
 

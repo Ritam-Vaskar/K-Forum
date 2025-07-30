@@ -72,7 +72,7 @@ const Home = () => {
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-white mb-4">
-            Welcome to <span className="text-[#17d059]">K-Connect</span>
+            Welcome to <span className="text-[#17d059]">K-Forum</span>
           </h1>
           <p className="text-xl text-gray-300 max-w-2xl mx-auto">
             Your secure community platform for KIIT students. Share, discuss, and connect anonymously or publicly.

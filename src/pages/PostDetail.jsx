@@ -22,7 +22,7 @@ const PostDetail = () => {
 
   const fetchPost = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/posts/${id}`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}`);
       setPost(response.data);
     } catch (error) {
       console.error('Error fetching post:', error);
@@ -32,7 +32,7 @@ const PostDetail = () => {
 
   const fetchComments = async () => {
     try {
-      const response = await axios.get(`http://localhost:5000/api/posts/${id}/comments`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}/comments`);
       setComments(response.data);
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -48,7 +48,7 @@ const PostDetail = () => {
     }
 
     try {
-      const response = await axios.post(`http://localhost:5000/api/posts/${id}/vote`, {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}/vote`, {
         voteType
       });
       setPost({
@@ -70,7 +70,7 @@ const PostDetail = () => {
 
     setSubmittingComment(true);
     try {
-      const response = await axios.post(`http://localhost:5000/api/posts/${id}/comments`, {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}/comments`, {
         content: newComment,
         isAnonymous: isAnonymousComment
       });

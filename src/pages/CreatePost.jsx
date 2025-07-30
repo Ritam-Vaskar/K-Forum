@@ -45,7 +45,7 @@ const CreatePost = () => {
         tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
       };
 
-      const response = await axios.post('http://localhost:5000/api/posts', postData);
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/posts`, postData);
       toast.success('Post created successfully!');
       navigate(`/post/${response.data._id}`);
     } catch (error) {
@@ -62,7 +62,7 @@ const CreatePost = () => {
           <div className="p-8">
             <div className="text-center mb-8">
               <h1 className="text-3xl font-bold text-white mb-2">Create New Post</h1>
-              <p className="text-gray-400">Share your thoughts with the K-Connect community</p>
+              <p className="text-gray-400">Share your thoughts with the K-Forum community</p>
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
