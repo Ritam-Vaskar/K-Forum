@@ -20,8 +20,9 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gradient-to-r from-emerald-400 to-emerald-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-lg">K</span>
+            <div className="w-8 h-8 border border-[#17d059] rounded flex items-center justify-center">
+              {/* <span className="text-white font-bold text-lg">K</span> */}
+              <img src="/kflogo.png" alt="Logo" height={50} />
             </div>
             <span className="text-xl font-bold text-white">K-Forum</span>
           </Link>
