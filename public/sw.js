@@ -5,8 +5,8 @@ const urlsToCache = [
   '/src/main.jsx',
   '/src/index.css',
   '/manifest.json',
-  '/icon-192x192.svg',
-  '/icon-512x512.svg'
+  '/kflogo.png',
+  '/kflogo.png'
 ];
 
 self.addEventListener('install', (event) => {
