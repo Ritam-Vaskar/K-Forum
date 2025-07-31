@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { ArrowUp, ArrowDown, MessageCircle, Eye, Clock, User, Send } from 'lucide-react';
+import { ArrowUp, ArrowDown, MessageCircle, Eye, Clock, User, Send, MoreVertical, Flag, Trash2 } from 'lucide-react';
 
 const PostDetail = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
@@ -14,6 +15,8 @@ const PostDetail = () => {
   const [newComment, setNewComment] = useState('');
   const [isAnonymousComment, setIsAnonymousComment] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
+  const [showPostOptions, setShowPostOptions] = useState(false);
+  const [showCommentOptions, setShowCommentOptions] = useState(null);
 
   useEffect(() => {
     fetchPost();
@@ -58,6 +61,86 @@ const PostDetail = () => {
       });
     } catch (error) {
       toast.error('Failed to vote');
+    }
+  };
+
+  const handleDeletePost = async () => {
+    if (!user || (user._id !== post.author._id && !user.isAdmin)) {
+      toast.error('You do not have permission to delete this post');
+      return;
+    }
+
+    try {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}`);
+      toast.success('Post deleted successfully');
+      navigate('/');
+    } catch (error) {
+      toast.error('Failed to delete post');
+    }
+  };
+
+  const [reportReason, setReportReason] = useState('');
+  const [showReportModal, setShowReportModal] = useState(false);
+
+  const handleReportPost = async () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    if (!reportReason.trim()) {
+      toast.error('Please provide a reason for reporting');
+      return;
+    }
+
+    try {
+      await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}/report`, {
+        reason: reportReason
+      });
+      toast.success('Post reported successfully');
+      setShowReportModal(false);
+      setReportReason('');
+      setShowPostOptions(false);
+    } catch (error) {
+      if (error.response?.status === 400) {
+        toast.error(error.response.data.message);
+      } else {
+        toast.error('Failed to report post');
+      }
+    }
+  };
+
+  const handleDeleteComment = async (commentId) => {
+    if (!user) {
+      toast.error('Please login to delete comment');
+      return;
+    }
+
+    try {
+      await axios.delete(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}/comments/${commentId}`);
+      setComments(comments.filter(comment => comment._id !== commentId));
+      setPost({
+        ...post,
+        commentCount: post.commentCount - 1
+      });
+      toast.success('Comment deleted successfully');
+    } catch (error) {
+      toast.error('Failed to delete comment');
+    }
+  };
+
+  const handleReportComment = async (commentId) => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
+    try {
+      await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}/comments/${commentId}/report`);
+      toast.success('Comment reported successfully');
+      setShowCommentOptions(null);
+    } catch (error) {
+      toast.error('Failed to report comment');
     }
   };
 
@@ -127,6 +210,39 @@ const PostDetail = () => {
             Return to home
           </Link>
         </div>
+
+        {/* Report Modal */}
+        {showReportModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
+              <h3 className="text-xl font-semibold text-white mb-4">Report Post</h3>
+              <textarea
+                value={reportReason}
+                onChange={(e) => setReportReason(e.target.value)}
+                placeholder="Please provide a reason for reporting this post..."
+                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-[#17d059] focus:ring-1 focus:ring-[#17d059] mb-4"
+                rows="4"
+              />
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => {
+                    setShowReportModal(false);
+                    setReportReason('');
+                  }}
+                  className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={handleReportPost}
+                  className="px-4 py-2 rounded bg-[#17d059] text-white hover:bg-emerald-600"
+                >
+                  Submit Report
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -137,7 +253,8 @@ const PostDetail = () => {
         {/* Post */}
         <div className="bg-gray-800 rounded-lg p-8 shadow-lg border border-gray-700 mb-8">
           <div className="flex items-start justify-between mb-6">
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center justify-between w-full">
+              <div className="flex items-center space-x-3">
               <div className="w-12 h-12 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center">
                 <User className="w-6 h-6 text-white" />
               </div>
@@ -151,9 +268,40 @@ const PostDetail = () => {
                 </p>
               </div>
             </div>
-            <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${getCategoryColor(post.category)}`}>
-              {post.category.replace('-', ' ').toUpperCase()}
-            </span>
+              <div className="flex items-center space-x-2">
+                <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${getCategoryColor(post.category)}`}>
+                  {post.category.replace('-', ' ').toUpperCase()}
+                </span>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowPostOptions(!showPostOptions)}
+                    className="p-1 hover:bg-gray-700 rounded-full transition-colors"
+                  >
+                    <MoreVertical className="w-5 h-5 text-gray-400" />
+                  </button>
+                  {showPostOptions && (
+                    <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50">
+                      <button
+                        onClick={handleReportPost}
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 flex items-center space-x-2 rounded-t-lg"
+                      >
+                        <Flag className="w-4 h-4" />
+                        <span>Report Post</span>
+                      </button>
+                      {user && (user._id === post.author._id || user.isAdmin) && (
+                        <button
+                          onClick={handleDeletePost}
+                          className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 flex items-center space-x-2 rounded-b-lg"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete Post</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
 
           <h1 className="text-3xl font-bold text-white mb-4">{post.title}</h1>
@@ -252,30 +400,60 @@ const PostDetail = () => {
           ) : (
             comments.map((comment) => (
               <div key={comment._id} className="bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-700">
-                <div className="flex items-start space-x-3">
-                  <div className="w-10 h-10 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
-                    <User className="w-5 h-5 text-white" />
+                <div className="flex items-start justify-between">
+                  <div className="flex items-start space-x-3">
+                    <div className="w-10 h-10 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
+                      <User className="w-5 h-5 text-white" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="flex items-center space-x-2 mb-2">
+                        <p className="text-white font-medium">
+                          {comment.author ? `${comment.author.name} (${comment.author.studentId})` : 'Anonymous'}
+                        </p>
+                        <span className="text-gray-400 text-sm">
+                          {formatTime(comment.createdAt)}
+                        </span>
+                      </div>
+                      <p className="text-gray-300 whitespace-pre-wrap">{comment.content}</p>
+                      <div className="flex items-center space-x-4 mt-3">
+                        <div className="flex items-center space-x-1 text-gray-400">
+                          <ArrowUp className="w-4 h-4" />
+                          <span>{comment.upvoteCount || 0}</span>
+                        </div>
+                        <div className="flex items-center space-x-1 text-gray-400">
+                          <ArrowDown className="w-4 h-4" />
+                          <span>{comment.downvoteCount || 0}</span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <p className="text-white font-medium">
-                        {comment.author ? `${comment.author.name} (${comment.author.studentId})` : 'Anonymous'}
-                      </p>
-                      <span className="text-gray-400 text-sm">
-                        {formatTime(comment.createdAt)}
-                      </span>
-                    </div>
-                    <p className="text-gray-300 whitespace-pre-wrap">{comment.content}</p>
-                    <div className="flex items-center space-x-4 mt-3">
-                      <div className="flex items-center space-x-1 text-gray-400">
-                        <ArrowUp className="w-4 h-4" />
-                        <span>{comment.upvoteCount || 0}</span>
+                  <div className="relative">
+                    <button
+                      onClick={() => setShowCommentOptions(showCommentOptions === comment._id ? null : comment._id)}
+                      className="p-1 hover:bg-gray-700 rounded-full transition-colors"
+                    >
+                      <MoreVertical className="w-4 h-4 text-gray-400" />
+                    </button>
+                    {showCommentOptions === comment._id && (
+                      <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50">
+                        <button
+                          onClick={() => handleReportComment(comment._id)}
+                          className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 flex items-center space-x-2 rounded-t-lg"
+                        >
+                          <Flag className="w-4 h-4" />
+                          <span>Report Comment</span>
+                        </button>
+                        {user && (user._id === comment.author._id || user.isAdmin) && (
+                          <button
+                            onClick={() => handleDeleteComment(comment._id)}
+                            className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 flex items-center space-x-2 rounded-b-lg"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                            <span>Delete Comment</span>
+                          </button>
+                        )}
                       </div>
-                      <div className="flex items-center space-x-1 text-gray-400">
-                        <ArrowDown className="w-4 h-4" />
-                        <span>{comment.downvoteCount || 0}</span>
-                      </div>
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>

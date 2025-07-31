@@ -208,4 +208,67 @@ router.post('/:id/comments', auth, async (req, res) => {
   }
 });
 
+// Delete post
+router.delete('/:id', auth, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if user is the author or an admin
+    if (!post.author.equals(req.userId) && req.userRole !== 'admin') {
+      return res.status(403).json({ message: 'Not authorized to delete this post' });
+    }
+
+    // Delete all comments associated with the post
+    await Comment.deleteMany({ post: req.params.id });
+
+    // Delete the post
+    await post.deleteOne();
+
+    res.json({ message: 'Post deleted successfully' });
+  } catch (error) {
+    console.error('Delete post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Report post
+router.post('/:id/report', auth, async (req, res) => {
+  try {
+    const { reason } = req.body;
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Check if user has already reported this post
+    const existingReport = post.reports.find(report => report.user.equals(req.userId));
+    if (existingReport) {
+      return res.status(400).json({ message: 'You have already reported this post' });
+    }
+
+    // Add report
+    post.reports.push({
+      user: req.userId,
+      reason
+    });
+
+    // Update moderation status if report count exceeds threshold
+    if (post.reports.length >= 5 && post.moderationStatus === 'approved') {
+      post.moderationStatus = 'flagged';
+    }
+
+    await post.save();
+
+    res.json({ message: 'Post reported successfully' });
+  } catch (error) {
+    console.error('Report post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 export default router;

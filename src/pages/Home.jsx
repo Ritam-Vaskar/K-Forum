@@ -1,9 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 import PostCard from '../components/Posts/PostCard';
-import { Search, Filter, TrendingUp, Clock, Tag } from 'lucide-react';
+import { Search, Filter, TrendingUp, Clock, Tag, Plus } from 'lucide-react';
 
 const Home = () => {
+  const navigate = useNavigate();
+  const { user } = useAuth();
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -66,8 +70,24 @@ const Home = () => {
     setPage(1);
   };
 
+  const handleCreatePost = () => {
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    navigate('/create-post');
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative">
+      {/* Floating Action Button */}
+      <button
+        onClick={handleCreatePost}
+        className="fixed bottom-4 right-4 bg-[#17d059] hover:bg-[#15b84f] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 z-50"
+        title="Create new post"
+      >
+        <Plus className="w-6 h-6" />
+      </button>
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Header */}
         <div className="text-center mb-12">
