@@ -10,6 +10,7 @@ import Register from './pages/Register';
 import CreatePost from './pages/CreatePost';
 import PostDetail from './pages/PostDetail';
 import Profile from './pages/Profile';
+import UserProfile from './pages/UserProfile';
 import Admin from './pages/Admin';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 
@@ -34,6 +35,7 @@ function App() {
                   } 
                 />
                 <Route path="/post/:id" element={<PostDetail />} />
+                <Route path="/user/:id" element={<UserProfile />} />
                 <Route 
                   path="/profile/:id" 
                   element={

@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import PostCard from '../components/Posts/PostCard';
-import { User, Mail, GraduationCap, Calendar, Trophy, MessageCircle, ThumbsUp, Edit3 } from 'lucide-react';
+import { User, Mail, GraduationCap, Calendar, Trophy, MessageCircle, ThumbsUp, Edit3, Camera } from 'lucide-react';
+import toast from 'react-hot-toast';
 
 const Profile = () => {
   const { id: urlId } = useParams();
@@ -20,6 +21,8 @@ const Profile = () => {
     year: '',
     branch: ''
   });
+  const [avatarPreview, setAvatarPreview] = useState(null);
+  const fileInputRef = useRef(null);
 
   const isOwnProfile = currentUser?.id === id;
 
@@ -50,6 +53,44 @@ const Profile = () => {
       console.error('Error fetching user posts:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) { // 5MB
+        toast.error('Image size should be less than 5MB');
+        return;
+      }
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please upload an image file');
+        return;
+      }
+      setAvatarPreview(URL.createObjectURL(file));
+      handleAvatarUpload(file);
+    }
+  };
+
+  const handleAvatarUpload = async (file) => {
+    const formData = new FormData();
+    formData.append('avatar', file);
+
+    try {
+      const response = await axios.put(
+        `${import.meta.env.VITE_BACKEND_API}/api/users/profile`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
+      setProfile({ ...profile, ...response.data });
+      toast.success('Profile picture updated successfully');
+    } catch (error) {
+      console.error('Error uploading avatar:', error);
+      toast.error('Failed to update profile picture');
     }
   };
 
@@ -90,8 +131,33 @@ const Profile = () => {
           <div className="lg:col-span-1">
             <div className="bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-700 sticky top-24">
               <div className="text-center mb-6">
-                <div className="w-24 h-24 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <User className="w-12 h-12 text-white" />
+                <div className="relative w-24 h-24 mx-auto mb-4">
+                  <div className="w-24 h-24 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center overflow-hidden">
+                    {(profile.avatar || avatarPreview) ? (
+                      <img 
+                        src={avatarPreview || profile.avatar} 
+                        alt={profile.name} 
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <User className="w-12 h-12 text-white" />
+                    )}
+                  </div>
+                  {isOwnProfile && (
+                    <button
+                      onClick={() => fileInputRef.current?.click()}
+                      className="absolute bottom-0 right-0 bg-[#17d059] p-2 rounded-full hover:bg-[#15b84f] transition-colors"
+                    >
+                      <Camera className="w-4 h-4 text-white" />
+                    </button>
+                  )}
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleAvatarChange}
+                    accept="image/*"
+                    className="hidden"
+                  />
                 </div>
                 {editMode ? (
                   <form onSubmit={handleEditSubmit} className="space-y-4">

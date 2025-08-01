@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { Send, Tag, Eye, EyeOff } from 'lucide-react';
+import { Send, Tag, Eye, EyeOff, Image, X } from 'lucide-react';
 
 const CreatePost = () => {
   const [formData, setFormData] = useState({
@@ -13,6 +13,8 @@ const CreatePost = () => {
     tags: '',
     isAnonymous: false
   });
+  const [selectedImages, setSelectedImages] = useState([]);
+  const [imageFiles, setImageFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -35,21 +37,89 @@ const CreatePost = () => {
     });
   };
 
+  const handleImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + selectedImages.length > 5) {
+      toast.error('Maximum 5 images allowed');
+      return;
+    }
+
+    const newImageFiles = files.filter(file => {
+      if (file.size > 10 * 1024 * 1024) { // 10MB
+        toast.error(`${file.name} is too large. Maximum size is 10MB`);
+        return false;
+      }
+      if (!file.type.startsWith('image/')) {
+        toast.error(`${file.name} is not an image`);
+        return false;
+      }
+      return true;
+    });
+
+    const newImagePreviews = newImageFiles.map(file => ({
+      url: URL.createObjectURL(file),
+      name: file.name
+    }));
+
+    setSelectedImages([...selectedImages, ...newImagePreviews]);
+    setImageFiles([...imageFiles, ...newImageFiles]);
+  };
+
+  const removeImage = (index) => {
+    const newSelectedImages = [...selectedImages];
+    const newImageFiles = [...imageFiles];
+    
+    // Revoke the object URL to free up memory
+    URL.revokeObjectURL(selectedImages[index].url);
+    
+    newSelectedImages.splice(index, 1);
+    newImageFiles.splice(index, 1);
+    
+    setSelectedImages(newSelectedImages);
+    setImageFiles(newImageFiles);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const postData = {
-        ...formData,
-        tags: formData.tags.split(',').map(tag => tag.trim()).filter(tag => tag)
-      };
+      const formDataToSend = new FormData();
+      formDataToSend.append('title', formData.title);
+      formDataToSend.append('content', formData.content);
+      formDataToSend.append('category', formData.category);
+      formDataToSend.append('tags', formData.tags);
+      formDataToSend.append('isAnonymous', formData.isAnonymous);
 
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/posts`, postData);
+      imageFiles.forEach(file => {
+        formDataToSend.append('images', file);
+      });
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_API}/api/posts`,
+        formDataToSend,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
       toast.success('Post created successfully!');
       navigate(`/post/${response.data._id}`);
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Failed to create post');
+      console.error('Error creating post:', error);
+      if (error.response?.data?.errors) {
+        // Handle validation errors from server
+        const errors = error.response.data.errors;
+        Object.values(errors).forEach(error => {
+          toast.error(error);
+        });
+      } else if (error.message) {
+        // Handle client-side validation errors
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to create post');
+      }
     } finally {
       setLoading(false);
     }
@@ -185,6 +255,48 @@ const CreatePost = () => {
                   />
                   <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#17d059]"></div>
                 </label>
+              </div>
+
+              {/* Image Upload */}
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Images (optional)
+                </label>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-center w-full">
+                    <label className="w-full flex flex-col items-center justify-center px-4 py-6 bg-gray-700 text-white rounded-lg border-2 border-gray-600 border-dashed cursor-pointer hover:border-[#17d059] transition-colors">
+                      <Image className="w-8 h-8 text-gray-400 mb-2" />
+                      <span className="text-sm text-gray-400">Click to upload images (max 5)</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageChange}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                  {selectedImages.length > 0 && (
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                      {selectedImages.map((image, index) => (
+                        <div key={index} className="relative group">
+                          <img
+                            src={image.url}
+                            alt={`Preview ${index + 1}`}
+                            className="w-full h-24 object-cover rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeImage(index)}
+                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="w-4 h-4" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               {/* Submit Button */}

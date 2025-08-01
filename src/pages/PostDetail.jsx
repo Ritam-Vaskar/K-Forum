@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { ArrowUp, ArrowDown, MessageCircle, Eye, Clock, User, Send, MoreVertical, Flag, Trash2 } from 'lucide-react';
+import { ArrowUp, ArrowDown, MessageCircle, Eye, Clock, User, Send, MoreVertical, Flag, Trash2, Image } from 'lucide-react';
 
 const PostDetail = () => {
   const { id } = useParams();
@@ -79,8 +79,10 @@ const PostDetail = () => {
     }
   };
 
-  const [reportReason, setReportReason] = useState('');
   const [showReportModal, setShowReportModal] = useState(false);
+const [reportReason, setReportReason] = useState('');
+const [showImageViewer, setShowImageViewer] = useState(false);
+const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const handleReportPost = async () => {
     if (!user) {
@@ -306,9 +308,46 @@ const PostDetail = () => {
 
           <h1 className="text-3xl font-bold text-white mb-4">{post.title}</h1>
           
-          <div className="text-gray-300 mb-6 whitespace-pre-wrap">
-            {post.content}
+          <div className="space-y-6">
+            <div className="text-gray-300 mb-6 whitespace-pre-wrap">
+              {post.content}
+            </div>
+
+            {/* Image attachments */}
+            {post.attachments && post.attachments.length > 0 && (
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {post.attachments.map((attachment, index) => (
+                  <div 
+                    key={index} 
+                    className="relative group cursor-pointer aspect-square overflow-hidden rounded-lg"
+                    onClick={() => {
+                      setSelectedImageIndex(index);
+                      setShowImageViewer(true);
+                    }}
+                  >
+                    <img 
+                      src={attachment.url} 
+                      alt={attachment.filename}
+                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                    />
+                    <div className="absolute inset-0 bg-black opacity-0 group-hover:opacity-30 transition-opacity duration-200" />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                      <Image className="w-8 h-8 text-white" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
+
+          {/* Image Viewer Modal */}
+          {showImageViewer && (
+            <ImageViewer
+              images={post.attachments.map(attachment => attachment.url)}
+              initialIndex={selectedImageIndex}
+              onClose={() => setShowImageViewer(false)}
+            />
+          )}
 
           {post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">

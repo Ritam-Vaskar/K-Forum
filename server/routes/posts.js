@@ -2,6 +2,25 @@ import express from 'express';
 import Post from '../models/Post.js';
 import Comment from '../models/Comment.js';
 import { auth } from '../middleware/auth.js';
+import { uploadImage } from '../config/cloudinary.js';
+import multer from 'multer';
+
+// Configure multer for memory storage
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+    files: 5 // Maximum 5 files
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Not an image! Please upload only images.'), false);
+    }
+  },
+});
 
 const router = express.Router();
 
@@ -86,17 +105,45 @@ router.get('/:id', async (req, res) => {
 });
 
 // Create post
-router.post('/', auth, async (req, res) => {
+router.post('/', auth, upload.array('images', 5), async (req, res) => {
   try {
     const { title, content, category, tags, isAnonymous } = req.body;
 
+    // Handle image uploads if present
+    const attachments = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        try {
+          // Convert buffer to base64
+          const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+          const imageUrl = await uploadImage(base64Image);
+          attachments.push({
+            url: imageUrl,
+            type: 'image',
+            filename: file.originalname
+          });
+        } catch (error) {
+          console.error('Image upload error:', error);
+          return res.status(400).json({ message: 'Failed to upload one or more images' });
+        }
+      }
+    }
+
+    // Clean and validate attachments data
+    const cleanAttachments = attachments.map(attachment => ({
+      url: attachment.url.trim(),
+      type: attachment.type,
+      filename: attachment.filename
+    }));
+
     const post = new Post({
-      title,
-      content,
+      title: title.trim(),
+      content: content.trim(),
       author: req.userId,
       category,
-      tags: tags || [],
-      isAnonymous: isAnonymous || false
+      tags: tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+      isAnonymous: isAnonymous === 'true',
+      attachments: cleanAttachments
     });
 
     await post.save();
@@ -112,6 +159,22 @@ router.post('/', auth, async (req, res) => {
     res.status(201).json(processedPost);
   } catch (error) {
     console.error('Create post error:', error);
+    if (error.name === 'ValidationError') {
+      const validationErrors = {};
+      for (let field in error.errors) {
+        validationErrors[field] = error.errors[field].message;
+      }
+      return res.status(400).json({
+        message: 'Validation failed',
+        errors: validationErrors
+      });
+    }
+    if (error instanceof multer.MulterError) {
+      return res.status(400).json({
+        message: 'File upload error',
+        error: error.message
+      });
+    }
     res.status(500).json({ message: 'Server error' });
   }
 });

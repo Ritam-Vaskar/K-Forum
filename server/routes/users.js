@@ -2,6 +2,24 @@ import express from 'express';
 import User from '../models/User.js';
 import Post from '../models/Post.js';
 import { auth } from '../middleware/auth.js';
+import { uploadImage } from '../config/cloudinary.js';
+import multer from 'multer';
+
+// Configure multer for memory storage
+const storage = multer.memoryStorage();
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 5 * 1024 * 1024, // 5MB limit
+  },
+  fileFilter: (req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Not an image! Please upload an image.'), false);
+    }
+  },
+});
 
 const router = express.Router();
 
@@ -31,13 +49,27 @@ router.get('/:id', async (req, res) => {
 });
 
 // Update user profile
-router.put('/profile', auth, async (req, res) => {
+router.put('/profile', auth, upload.single('avatar'), async (req, res) => {
   try {
     const { name, year, branch } = req.body;
+    const updateData = { name, year, branch };
+
+    // Handle avatar upload if file is present
+    if (req.file) {
+      try {
+        // Convert buffer to base64
+        const base64Image = `data:${req.file.mimetype};base64,${req.file.buffer.toString('base64')}`;
+        const avatarUrl = await uploadImage(base64Image);
+        updateData.avatar = avatarUrl;
+      } catch (error) {
+        console.error('Avatar upload error:', error);
+        return res.status(400).json({ message: 'Failed to upload avatar' });
+      }
+    }
     
     const user = await User.findByIdAndUpdate(
       req.userId,
-      { name, year, branch },
+      updateData,
       { new: true }
     ).select('-password');
 

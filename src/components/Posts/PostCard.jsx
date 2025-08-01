@@ -4,11 +4,14 @@ import { useAuth } from '../../contexts/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
 import { ArrowUp, ArrowDown, MessageCircle, Eye, Clock, User, MoreVertical, Flag, Trash2 } from 'lucide-react';
+import ImageViewer from '../ImageViewer';
 
 const PostCard = ({ post, onDelete }) => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [showOptions, setShowOptions] = useState(false);
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const formatTime = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
@@ -82,12 +85,27 @@ const PostCard = ({ post, onDelete }) => {
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center">
-              <User className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center overflow-hidden">
+              {post.author?.avatar ? (
+                <img 
+                  src={post.author.avatar} 
+                  alt={post.author.name} 
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="w-5 h-5 text-white" />
+              )}
             </div>
           <div>
             <p className="text-white font-medium">
-              {post.author ? `${post.author.name} (${post.author.studentId})` : 'Anonymous'}
+              {post.author ? (
+                <Link 
+                  to={`/user/${post.author._id}`}
+                  className="hover:text-[#17d059] transition-colors"
+                >
+                  {post.author.name} ({post.author.studentId})
+                </Link>
+              ) : 'Anonymous'}
             </p>
             <p className="text-gray-400 text-sm flex items-center">
               <Clock className="w-4 h-4 mr-1" />
@@ -134,14 +152,52 @@ const PostCard = ({ post, onDelete }) => {
         </div>
       </div>
 
-      <Link to={`/post/${post._id}`} className="block">
-        <h3 className="text-xl font-semibold text-white mb-3 hover:text-[#17d059] transition-colors">
-          {post.title}
-        </h3>
-        <p className="text-gray-300 mb-4 line-clamp-3">
-          {post.content.substring(0, 200)}...
-        </p>
-      </Link>
+      <div className="mt-4 space-y-4">
+        <Link to={`/post/${post._id}`} className="block">
+          <h3 className="text-xl font-semibold text-white mb-3 hover:text-[#17d059] transition-colors">
+            {post.title}
+          </h3>
+          <p className="text-gray-300 mb-4 line-clamp-3">
+            {post.content.substring(0, 200)}...
+          </p>
+        </Link>
+
+        {/* Image attachments */}
+        {post.attachments && post.attachments.length > 0 && (
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+            {post.attachments.map((attachment, index) => (
+              <div 
+                key={index} 
+                className="relative group cursor-pointer aspect-square overflow-hidden rounded-lg"
+                onClick={() => {
+                  setSelectedImageIndex(index);
+                  setShowImageViewer(true);
+                }}
+              >
+                <img 
+                  src={attachment.url} 
+                  alt={attachment.filename}
+                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
+                />
+                {index === 2 && post.attachments.length > 3 && (
+                  <div className="absolute inset-0 bg-black bg-opacity-75 flex items-center justify-center">
+                    <span className="text-white text-xl font-semibold">+{post.attachments.length - 3}</span>
+                  </div>
+                )}
+              </div>
+            )).slice(0, 3)}
+          </div>
+        )}
+      </div>
+      
+      {/* Image Viewer Modal */}
+      {showImageViewer && (
+        <ImageViewer
+          images={post.attachments.map(attachment => attachment.url)}
+          initialIndex={selectedImageIndex}
+          onClose={() => setShowImageViewer(false)}
+        />
+      )}
 
       {post.tags && post.tags.length > 0 && (
         <div className="flex flex-wrap gap-2 mb-4">

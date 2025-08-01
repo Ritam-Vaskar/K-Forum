@@ -59,9 +59,20 @@ const postSchema = new mongoose.Schema({
     default: 0
   },
   attachments: [{
-    url: String,
-    type: String,
-    filename: String
+    url: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    type: {
+      type: String,
+      required: true,
+      enum: ['image']
+    },
+    filename: {
+      type: String,
+      required: true
+    }
   }],
   isPinned: {
     type: Boolean,
