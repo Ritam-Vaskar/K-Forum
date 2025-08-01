@@ -146,15 +146,36 @@ const Login = () => {
                 <label className="block text-sm font-medium text-gray-300 mb-2">
                   Verification Code
                 </label>
-                <input
-                  type="text"
-                  value={verificationOTP}
-                  onChange={(e) => setVerificationOTP(e.target.value)}
-                  maxLength={6}
-                  required
-                  className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none text-center text-2xl tracking-wider"
-                  placeholder="000000"
-                />
+                <div className="grid grid-cols-6 gap-2">
+                  {[...Array(6)].map((_, index) => (
+                    <input
+                      key={index}
+                      type="text"
+                      maxLength={1}
+                      value={verificationOTP[index] || ''}
+                      onChange={(e) => {
+                        const value = e.target.value;
+                        if (!/^\d*$/.test(value)) return;
+                        
+                        const newOTP = verificationOTP.split('');
+                        newOTP[index] = value;
+                        setVerificationOTP(newOTP.join(''));
+                        
+                        if (value && index < 5) {
+                          const nextInput = e.target.parentElement.children[index + 1];
+                          nextInput.focus();
+                        }
+                      }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Backspace' && !verificationOTP[index] && index > 0) {
+                          const prevInput = e.target.parentElement.children[index - 1];
+                          prevInput.focus();
+                        }
+                      }}
+                      className="w-full h-12 bg-gray-700 text-white text-center text-xl rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none transition-colors"
+                    />
+                  ))}
+                </div>
               </div>
 
               <p className="text-sm text-gray-400 text-center">
@@ -164,7 +185,7 @@ const Login = () => {
               <div className="flex flex-col space-y-3">
                 <button
                   type="submit"
-                  disabled={loading}
+                  disabled={loading || verificationOTP.length !== 6}
                   className="w-full bg-gradient-to-r from-[#17d059] to-emerald-600 text-white py-3 rounded-lg font-semibold hover:from-[#15b84f] hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-[#17d059]/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
                 >
                   {loading ? 'Verifying...' : 'Verify Email'}
@@ -172,7 +193,10 @@ const Login = () => {
 
                 <button
                   type="button"
-                  onClick={() => setShowVerification(false)}
+                  onClick={() => {
+                    setShowVerification(false);
+                    setVerificationOTP('');
+                  }}
                   className="w-full bg-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-600 focus:outline-none transition-all duration-200"
                 >
                   Back to Login
