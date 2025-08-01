@@ -141,13 +141,43 @@ router.post('/login', async (req, res) => {
       return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    if (!user.isVerified) {
-      return res.status(400).json({ message: 'Please verify your email first' });
-    }
-
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       return res.status(400).json({ message: 'Invalid credentials' });
+    }
+
+    if (!user.isVerified) {
+      // Generate new OTP for unverified users
+      const otp = generateOTP();
+      const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      
+      user.verificationOTP = otp;
+      user.otpExpires = otpExpires;
+      await user.save();
+
+      // Send new OTP email
+      const mailOptions = {
+        from: process.env.EMAIL_USER,
+        to: email,
+        subject: 'K-Forum Email Verification',
+        html: `
+          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+            <h2 style="color: #17d059;">Email Verification Required</h2>
+            <p>Your verification code is:</p>
+            <h1 style="color: #17d059; font-size: 32px; letter-spacing: 5px;">${otp}</h1>
+            <p>This code will expire in 10 minutes.</p>
+            <p>Please verify your email to access your account.</p>
+          </div>
+        `
+      };
+
+      await transporter.sendMail(mailOptions);
+
+      return res.status(403).json({
+        message: 'Please verify your email. A new verification code has been sent.',
+        userId: user._id,
+        requiresVerification: true
+      });
     }
 
     const token = jwt.sign(

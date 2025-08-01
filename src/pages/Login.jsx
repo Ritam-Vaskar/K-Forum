@@ -11,12 +11,14 @@ const Login = () => {
     password: ''
   });
   const [loading, setLoading] = useState(false);
+  const [showVerification, setShowVerification] = useState(false);
+  const [verificationOTP, setVerificationOTP] = useState('');
+  const [userId, setUserId] = useState(null);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
-  const [resetStep, setResetStep] = useState('email'); // email, otp, newPassword
+  const [resetStep, setResetStep] = useState('email');
   const [resetOTP, setResetOTP] = useState('');
   const [newPassword, setNewPassword] = useState('');
-  const [userId, setUserId] = useState(null);
   const [resetLoading, setResetLoading] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -34,11 +36,37 @@ const Login = () => {
 
     try {
       const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/auth/login`, formData);
-      login(response.data.user, response.data.token);
-      toast.success('Login successful!');
-      navigate('/');
+      
+      if (response.data.requiresVerification) {
+        setUserId(response.data.userId);
+        setShowVerification(true);
+        toast.error('Please verify your email to continue');
+      } else {
+        login(response.data.user, response.data.token);
+        toast.success('Login successful!');
+        navigate('/');
+      }
     } catch (error) {
       toast.error(error.response?.data?.message || 'Login failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleVerifyOTP = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/auth/verify-otp`, {
+        userId,
+        otp: verificationOTP
+      });
+      login(response.data.user, response.data.token);
+      toast.success('Email verified successfully!');
+      navigate('/');
+    } catch (error) {
+      toast.error(error.response?.data?.message || 'OTP verification failed');
     } finally {
       setLoading(false);
     }
@@ -56,61 +84,102 @@ const Login = () => {
             <p className="text-gray-400">Sign in to your K-Forum account</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                KIIT Email
-              </label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-700 text-white pl-10 pr-4 py-3 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none transition-colors"
-                  placeholder="your.email@kiit.ac.in"
-                />
+          {!showVerification ? (
+            <form onSubmit={handleSubmit} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  KIIT Email
+                </label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    className="w-full bg-gray-700 text-white pl-10 pr-4 py-3 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none transition-colors"
+                    placeholder="your.email@kiit.ac.in"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-300 mb-2">
-                Password
-              </label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                <input
-                  type="password"
-                  name="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  required
-                  className="w-full bg-gray-700 text-white pl-10 pr-4 py-3 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none transition-colors"
-                  placeholder="Enter your password"
-                />
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Password
+                </label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+                  <input
+                    type="password"
+                    name="password"
+                    value={formData.password}
+                    onChange={handleChange}
+                    required
+                    className="w-full bg-gray-700 text-white pl-10 pr-4 py-3 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none transition-colors"
+                    placeholder="Enter your password"
+                  />
+                </div>
               </div>
-            </div>
 
-            <div className="flex justify-between items-center">
+              <div className="flex justify-between items-center">
+                <button
+                  type="button"
+                  onClick={() => setShowForgotPassword(true)}
+                  className="text-sm text-[#17d059] hover:text-emerald-400 focus:outline-none"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+
               <button
-                type="button"
-                onClick={() => setShowForgotPassword(true)}
-                className="text-sm text-[#17d059] hover:text-emerald-400 focus:outline-none"
+                type="submit"
+                disabled={loading}
+                className="w-full bg-gradient-to-r from-[#17d059] to-emerald-600 text-white py-3 rounded-lg font-semibold hover:from-[#15b84f] hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-[#17d059]/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
               >
-                Forgot Password?
+                {loading ? 'Signing in...' : 'Sign In'}
               </button>
-            </div>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifyOTP} className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-300 mb-2">
+                  Verification Code
+                </label>
+                <input
+                  type="text"
+                  value={verificationOTP}
+                  onChange={(e) => setVerificationOTP(e.target.value)}
+                  maxLength={6}
+                  required
+                  className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none text-center text-2xl tracking-wider"
+                  placeholder="000000"
+                />
+              </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-gradient-to-r from-[#17d059] to-emerald-600 text-white py-3 rounded-lg font-semibold hover:from-[#15b84f] hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-[#17d059]/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
-            >
-              {loading ? 'Signing in...' : 'Sign In'}
-            </button>
-          </form>
+              <p className="text-sm text-gray-400 text-center">
+                Please enter the verification code sent to your email
+              </p>
+
+              <div className="flex flex-col space-y-3">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full bg-gradient-to-r from-[#17d059] to-emerald-600 text-white py-3 rounded-lg font-semibold hover:from-[#15b84f] hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-[#17d059]/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                >
+                  {loading ? 'Verifying...' : 'Verify Email'}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setShowVerification(false)}
+                  className="w-full bg-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-600 focus:outline-none transition-all duration-200"
+                >
+                  Back to Login
+                </button>
+              </div>
+            </form>
+          )}
 
           <div className="mt-8 text-center">
             <p className="text-gray-400">
