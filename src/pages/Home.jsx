@@ -3,11 +3,12 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PostCard from '../components/Posts/PostCard';
-import { Search, Filter, TrendingUp, Clock, Tag, Plus } from 'lucide-react';
+import { Search, Filter, Tag, Plus } from 'lucide-react';
 
 const Home = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
@@ -16,7 +17,7 @@ const Home = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Categories for the dropdown
+  // Categories
   const categories = [
     { value: 'all', label: 'All Categories' },
     { value: 'academic', label: 'Academic' },
@@ -45,8 +46,9 @@ const Home = () => {
           limit: 10
         }
       });
-      setPosts(response.data.posts);
-      setTotalPages(response.data.totalPages);
+
+      setPosts(response.data.posts || []);
+      setTotalPages(response.data.totalPages ?? 1); // FIX ✔
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
@@ -80,15 +82,17 @@ const Home = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative">
+
       {/* Floating Action Button */}
       <button
         onClick={handleCreatePost}
         className="fixed bottom-4 right-4 bg-[#17d059] hover:bg-[#15b84f] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 z-50"
-        title="Create new post"
       >
         <Plus className="w-6 h-6" />
       </button>
+
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+
         {/* Header */}
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold text-white mb-4">
@@ -99,12 +103,13 @@ const Home = () => {
           </p>
         </div>
 
-        {/* Search and Filters */}
+        {/* Search + Filters */}
         <div className="mb-8 space-y-4">
+
           {/* Search Bar */}
           <form onSubmit={handleSearch} className="flex gap-4">
             <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
               <input
                 type="text"
                 placeholder="Search posts..."
@@ -115,28 +120,27 @@ const Home = () => {
             </div>
             <button
               type="submit"
-              className="bg-[#17d059] hover:bg-[#15b84f] text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-colors"
+              className="bg-[#17d059] hover:bg-[#15b84f] text-white px-6 py-3 rounded-lg flex items-center space-x-2"
             >
               <Search className="w-5 h-5" />
               <span>Search</span>
             </button>
           </form>
 
-          {/* Filters Row */}
+          {/* Filters */}
           <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+
             {/* Category Filter */}
             <div className="flex items-center space-x-2">
               <Tag className="text-gray-400 w-5 h-5" />
-              <span className="text-gray-300 whitespace-nowrap">Category:</span>
+              <span className="text-gray-300">Category:</span>
               <select
                 value={selectedCategory}
                 onChange={(e) => handleCategoryChange(e.target.value)}
-                className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-[#17d059] focus:outline-none min-w-[160px]"
+                className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-[#17d059]"
               >
-                {categories.map((category) => (
-                  <option key={category.value} value={category.value}>
-                    {category.label}
-                  </option>
+                {categories.map((cat) => (
+                  <option key={cat.value} value={cat.value}>{cat.label}</option>
                 ))}
               </select>
             </div>
@@ -144,11 +148,11 @@ const Home = () => {
             {/* Sort Filter */}
             <div className="flex items-center space-x-2">
               <Filter className="text-gray-400 w-5 h-5" />
-              <span className="text-gray-300 whitespace-nowrap">Sort by:</span>
+              <span className="text-gray-300">Sort by:</span>
               <select
                 value={sortBy}
                 onChange={(e) => handleSortChange(e.target.value)}
-                className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-[#17d059] focus:outline-none min-w-[140px]"
+                className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-[#17d059]"
               >
                 <option value="createdAt">Latest</option>
                 <option value="upvotes">Most Upvoted</option>
@@ -157,27 +161,14 @@ const Home = () => {
               </select>
             </div>
 
-            {/* Active Filter Indicator */}
-            {selectedCategory !== 'all' && (
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-400">Filtered by:</span>
-                <span className="bg-[#17d059] text-white px-3 py-1 rounded-full text-sm flex items-center space-x-1">
-                  <span>{categories.find(cat => cat.value === selectedCategory)?.label}</span>
-                  <button
-                    onClick={() => handleCategoryChange('all')}
-                    className="hover:bg-[#15b84f] rounded-full p-0.5 ml-1"
-                  >
-                    <span className="text-xs">×</span>
-                  </button>
-                </span>
-              </div>
-            )}
           </div>
         </div>
 
         {/* Posts Section */}
         <div className="w-full">
+
           {loading ? (
+            /* Loading Skeletons */
             <div className="space-y-6">
               {[...Array(5)].map((_, i) => (
                 <div key={i} className="bg-gray-800 rounded-lg p-6 animate-pulse">
@@ -188,7 +179,10 @@ const Home = () => {
                 </div>
               ))}
             </div>
+
           ) : posts.length === 0 ? (
+
+            /* No Posts Found */
             <div className="text-center py-12">
               <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
                 <Search className="w-12 h-12 text-gray-600" />
@@ -200,19 +194,21 @@ const Home = () => {
                   : 'Be the first to share something with the community!'}
               </p>
             </div>
+
           ) : (
+
             <>
               {/* Results Count */}
               <div className="mb-6">
                 <p className="text-gray-400 text-sm">
                   {posts.length} {posts.length === 1 ? 'post' : 'posts'} found
                   {selectedCategory !== 'all' && (
-                    <span> in {categories.find(cat => cat.value === selectedCategory)?.label}</span>
+                    <span> in {categories.find(c => c.value === selectedCategory)?.label}</span>
                   )}
                 </p>
               </div>
 
-              {/* Posts Grid */}
+              {/* Posts List */}
               <div className="space-y-6">
                 {posts.map((post) => (
                   <PostCard key={post._id} post={post} />
@@ -222,6 +218,8 @@ const Home = () => {
               {/* Pagination */}
               {totalPages > 1 && (
                 <div className="flex justify-center mt-8 space-x-2">
+
+                  {/* Previous */}
                   <button
                     onClick={() => setPage(Math.max(1, page - 1))}
                     disabled={page === 1}
@@ -233,11 +231,14 @@ const Home = () => {
                   >
                     Previous
                   </button>
-                  
-                  {[...Array(Math.min(5, totalPages))].map((_, i) => {
-                    const pageNum = Math.max(1, Math.min(totalPages - 4, page - 2)) + i;
+
+                  {/* Page Numbers (SAFE FIXED VERSION) */}
+                  {[...Array(Math.min(5, totalPages || 1))].map((_, i) => {
+                    const offset = Math.max(1, Math.min(totalPages - 4, page - 2));
+                    const pageNum = offset + i;
+
                     if (pageNum > totalPages) return null;
-                    
+
                     return (
                       <button
                         key={pageNum}
@@ -253,6 +254,7 @@ const Home = () => {
                     );
                   })}
 
+                  {/* Next */}
                   <button
                     onClick={() => setPage(Math.min(totalPages, page + 1))}
                     disabled={page === totalPages}
@@ -264,10 +266,13 @@ const Home = () => {
                   >
                     Next
                   </button>
+
                 </div>
               )}
+
             </>
           )}
+
         </div>
       </div>
     </div>

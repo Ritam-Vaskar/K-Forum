@@ -68,13 +68,13 @@ const CreatePost = () => {
   const removeImage = (index) => {
     const newSelectedImages = [...selectedImages];
     const newImageFiles = [...imageFiles];
-    
+
     // Revoke the object URL to free up memory
     URL.revokeObjectURL(selectedImages[index].url);
-    
+
     newSelectedImages.splice(index, 1);
     newImageFiles.splice(index, 1);
-    
+
     setSelectedImages(newSelectedImages);
     setImageFiles(newImageFiles);
   };
@@ -96,7 +96,7 @@ const CreatePost = () => {
       });
 
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API}/api/posts`,
+        `${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts`,
         formDataToSend,
         {
           headers: {
@@ -165,11 +165,10 @@ const CreatePost = () => {
                   {categories.map((category) => (
                     <label
                       key={category.id}
-                      className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-all ${
-                        formData.category === category.id
+                      className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-all ${formData.category === category.id
                           ? 'border-[#17d059] bg-[#17d059]/10 text-[#17d059]'
                           : 'border-gray-600 hover:border-gray-500 text-gray-300'
-                      }`}
+                        }`}
                     >
                       <input
                         type="radio"
@@ -238,7 +237,7 @@ const CreatePost = () => {
                   <div>
                     <h3 className="text-white font-medium">Anonymous Post</h3>
                     <p className="text-gray-400 text-sm">
-                      {formData.isAnonymous 
+                      {formData.isAnonymous
                         ? 'Your identity will be hidden from other users'
                         : 'Your name and details will be visible to other users'
                       }

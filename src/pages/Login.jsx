@@ -35,8 +35,12 @@ const Login = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/auth/login`, formData);
-      
+      const apiUrl = import.meta.env.VITE_BACKEND_API || 'http://localhost:5001';
+      console.log('Attempting login to:', `${apiUrl}/api/auth/login`);
+
+      const response = await axios.post(`${apiUrl}/api/auth/login`, formData);
+      console.log('Login response:', response.data);
+
       if (response.data.requiresVerification) {
         setUserId(response.data.userId);
         setShowVerification(true);
@@ -47,7 +51,16 @@ const Login = () => {
         navigate('/');
       }
     } catch (error) {
-      toast.error(error.response?.data?.message || 'Login failed');
+      console.error('Login error full object:', error);
+      if (error.response) {
+        console.error('Error data:', error.response.data);
+        console.error('Error status:', error.response.status);
+      } else if (error.request) {
+        console.error('Error request (no response):', error.request);
+      } else {
+        console.error('Error message:', error.message);
+      }
+      toast.error(error.response?.data?.message || 'Login failed - Check console for details');
     } finally {
       setLoading(false);
     }
@@ -67,6 +80,43 @@ const Login = () => {
       navigate('/');
     } catch (error) {
       toast.error(error.response?.data?.message || 'OTP verification failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleDemoLogin = async () => {
+    setLoading(true);
+    try {
+      const apiUrl = import.meta.env.VITE_BACKEND_API || 'http://localhost:5001';
+      const response = await axios.post(`${apiUrl}/api/auth/login`, {
+        email: 'dummy@kiit.ac.in',
+        password: 'dummy123'
+      });
+      login(response.data.user, response.data.token);
+      toast.success('Demo login successful!');
+      navigate('/');
+    } catch (error) {
+      console.error('Demo login error:', error);
+
+      // Fail-safe: Client-side Login Bypass
+      // If server is unreachable or fails, force login as Demo User locally
+      console.log('Attempting client-side fallback login...');
+      const fallbackUser = {
+        _id: 'dummy_id_fallback', // This ID might not match DB, but allows UI access
+        name: 'Demo User (Offline Mode)',
+        email: 'dummy@kiit.ac.in',
+        role: 'student',
+        studentId: '9999999',
+        year: 4,
+        branch: 'CSE',
+        isVerified: true,
+        reputation: 0
+      };
+
+      login(fallbackUser, 'dummy-demo-token');
+      toast.success('Entered Demo Mode (Offline/Bypass)');
+      navigate('/');
     } finally {
       setLoading(false);
     }
@@ -139,6 +189,15 @@ const Login = () => {
               >
                 {loading ? 'Signing in...' : 'Sign In'}
               </button>
+
+              <button
+                type="button"
+                onClick={handleDemoLogin}
+                disabled={loading}
+                className="w-full bg-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-600 focus:outline-none focus:ring-4 focus:ring-gray-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+              >
+                Demo Login
+              </button>
             </form>
           ) : (
             <form onSubmit={handleVerifyOTP} className="space-y-6">
@@ -156,11 +215,11 @@ const Login = () => {
                       onChange={(e) => {
                         const value = e.target.value;
                         if (!/^\d*$/.test(value)) return;
-                        
+
                         const newOTP = verificationOTP.split('');
                         newOTP[index] = value;
                         setVerificationOTP(newOTP.join(''));
-                        
+
                         if (value && index < 5) {
                           const nextInput = e.target.parentElement.children[index + 1];
                           nextInput.focus();
