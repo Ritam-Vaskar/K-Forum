@@ -97,12 +97,7 @@ const CreatePost = () => {
 
       const response = await axios.post(
         `${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts`,
-        formDataToSend,
-        {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
-        }
+        formDataToSend
       );
       toast.success('Post created successfully!');
       navigate(`/post/${response.data._id}`);
@@ -166,8 +161,8 @@ const CreatePost = () => {
                     <label
                       key={category.id}
                       className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-all ${formData.category === category.id
-                          ? 'border-[#17d059] bg-[#17d059]/10 text-[#17d059]'
-                          : 'border-gray-600 hover:border-gray-500 text-gray-300'
+                        ? 'border-[#17d059] bg-[#17d059]/10 text-[#17d059]'
+                        : 'border-gray-600 hover:border-gray-500 text-gray-300'
                         }`}
                     >
                       <input

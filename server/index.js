@@ -64,7 +64,7 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'K-Forum API is running!' });
 });
 
-const PORT = process.env.PORT || 5001;
+const PORT = 5001; // Force 5001 to avoid conflict with stuck process on 5000
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

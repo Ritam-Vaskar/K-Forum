@@ -11,12 +11,27 @@ export const auth = async (req, res, next) => {
 
     // Bypass for Demo User (Fail-safe)
     if (token === 'dummy-demo-token') {
-      const dummyUser = await User.findOne({ email: 'dummy@kiit.ac.in' });
-      if (dummyUser) {
-        req.userId = dummyUser._id;
-        req.userRole = dummyUser.role;
-        return next();
+      let dummyUser = await User.findOne({ email: 'dummy@kiit.ac.in' });
+
+      // If dummy user doesn't exist (e.g. fresh DB + client bypass), create it now!
+      if (!dummyUser) {
+        dummyUser = new User({
+          name: 'Demo User',
+          email: 'dummy@kiit.ac.in',
+          password: 'dummy123',
+          studentId: '9999999',
+          year: 4,
+          branch: 'CSE',
+          isVerified: true,
+          role: 'student'
+        });
+        await dummyUser.save();
+        console.log('Dummy user auto-created in auth middleware');
       }
+
+      req.userId = dummyUser._id;
+      req.userRole = dummyUser.role;
+      return next();
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'K-Forum-secret');

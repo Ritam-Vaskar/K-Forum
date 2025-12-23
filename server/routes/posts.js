@@ -24,6 +24,46 @@ const upload = multer({
 
 const router = express.Router();
 
+// Get trending hashtags
+router.get('/trending/hashtags', async (req, res) => {
+  try {
+    const { limit = 10 } = req.query;
+
+    // Aggregate to find most used tags in the last 7 days
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const trendingTags = await Post.aggregate([
+      {
+        $match: {
+          createdAt: { $gte: sevenDaysAgo },
+          moderationStatus: 'approved'
+        }
+      },
+      { $unwind: '$tags' },
+      {
+        $group: {
+          _id: '$tags',
+          count: { $sum: 1 }
+        }
+      },
+      { $sort: { count: -1 } },
+      { $limit: parseInt(limit) },
+      {
+        $project: {
+          tag: '$_id',
+          count: 1,
+          _id: 0
+        }
+      }
+    ]);
+
+    res.json(trendingTags);
+  } catch (error) {
+    console.error('Get trending hashtags error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get all posts with pagination and filtering
 router.get('/', async (req, res) => {
   try {
@@ -37,11 +77,11 @@ router.get('/', async (req, res) => {
     } = req.query;
 
     let query = { moderationStatus: 'approved' };
-    
+
     if (category && category !== 'all') {
       query.category = category;
     }
-    
+
     if (search) {
       query.$text = { $search: search };
     }
@@ -109,7 +149,15 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
   try {
     const { title, content, category, tags, isAnonymous } = req.body;
 
-    // Handle image uploads if present
+    // Extract hashtags from content (Twitter-style)
+    const hashtagRegex = /#(\w+)/g;
+    const extractedHashtags = [];
+    let match;
+    while ((match = hashtagRegex.exec(content)) !== null) {
+      extractedHashtags.push(match[1].toLowerCase());
+    }
+
+    // Handle image uploads if present (OPTIONAL - failures won't block post)
     const attachments = [];
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
@@ -123,8 +171,8 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
             filename: file.originalname
           });
         } catch (error) {
-          console.error('Image upload error:', error);
-          return res.status(400).json({ message: 'Failed to upload one or more images' });
+          console.warn('Image upload failed (skipping):', error.message);
+          // Continue without this image - don't block the post
         }
       }
     }
@@ -136,12 +184,16 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
       filename: attachment.filename
     }));
 
+    // Combine manual tags with extracted hashtags
+    const manualTags = tags ? tags.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean) : [];
+    const allTags = [...new Set([...manualTags, ...extractedHashtags])]; // Dedupe
+
     const post = new Post({
       title: title.trim(),
       content: content.trim(),
       author: req.userId,
       category,
-      tags: tags ? tags.split(',').map(tag => tag.trim()).filter(Boolean) : [],
+      tags: allTags,
       isAnonymous: isAnonymous === 'true',
       attachments: cleanAttachments
     });
@@ -215,12 +267,12 @@ router.post('/:id/vote', auth, async (req, res) => {
 // Get comments for a post
 router.get('/:id/comments', async (req, res) => {
   try {
-    const comments = await Comment.find({ 
+    const comments = await Comment.find({
       post: req.params.id,
       moderationStatus: 'approved'
     })
-    .populate('author', 'name studentId year branch')
-    .sort({ createdAt: -1 });
+      .populate('author', 'name studentId year branch')
+      .sort({ createdAt: -1 });
 
     const processedComments = comments.map(comment => ({
       ...comment.toObject(),

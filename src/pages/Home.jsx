@@ -3,6 +3,7 @@ import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PostCard from '../components/Posts/PostCard';
+import TrendingHashtags from '../components/TrendingHashtags';
 import { Search, Filter, Tag, Plus } from 'lucide-react';
 
 const Home = () => {
@@ -17,17 +18,16 @@ const Home = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
-  // Categories
+  // Categories (must match Post model enum)
   const categories = [
     { value: 'all', label: 'All Categories' },
-    { value: 'academic', label: 'Academic' },
-    { value: 'events', label: 'Events' },
-    { value: 'discussion', label: 'Discussion' },
-    { value: 'help', label: 'Help & Support' },
-    { value: 'social', label: 'Social' },
-    { value: 'announcements', label: 'Announcements' },
-    { value: 'clubs', label: 'Clubs & Societies' },
-    { value: 'opportunities', label: 'Opportunities' }
+    { value: 'academics', label: '📚 Academics' },
+    { value: 'events', label: '🎉 Events' },
+    { value: 'rants', label: '😤 Rants' },
+    { value: 'internships', label: '💼 Internships' },
+    { value: 'lost-found', label: '🔍 Lost & Found' },
+    { value: 'clubs', label: '🏛️ Clubs' },
+    { value: 'general', label: '💬 General' }
   ];
 
   useEffect(() => {
@@ -164,114 +164,126 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Posts Section */}
-        <div className="w-full">
+        {/* Main Content Area - Two Column Layout */}
+        <div className="flex flex-col lg:flex-row gap-8">
 
-          {loading ? (
-            /* Loading Skeletons */
-            <div className="space-y-6">
-              {[...Array(5)].map((_, i) => (
-                <div key={i} className="bg-gray-800 rounded-lg p-6 animate-pulse">
-                  <div className="h-4 bg-gray-700 rounded w-3/4 mb-4"></div>
-                  <div className="h-3 bg-gray-700 rounded w-1/2 mb-2"></div>
-                  <div className="h-3 bg-gray-700 rounded w-full mb-2"></div>
-                  <div className="h-3 bg-gray-700 rounded w-2/3"></div>
-                </div>
-              ))}
-            </div>
+          {/* Posts Section */}
+          <div className="flex-1">
 
-          ) : posts.length === 0 ? (
-
-            /* No Posts Found */
-            <div className="text-center py-12">
-              <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                <Search className="w-12 h-12 text-gray-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-white mb-2">No posts found</h3>
-              <p className="text-gray-400">
-                {selectedCategory !== 'all' || searchTerm 
-                  ? 'Try adjusting your search or category filter.' 
-                  : 'Be the first to share something with the community!'}
-              </p>
-            </div>
-
-          ) : (
-
-            <>
-              {/* Results Count */}
-              <div className="mb-6">
-                <p className="text-gray-400 text-sm">
-                  {posts.length} {posts.length === 1 ? 'post' : 'posts'} found
-                  {selectedCategory !== 'all' && (
-                    <span> in {categories.find(c => c.value === selectedCategory)?.label}</span>
-                  )}
-                </p>
-              </div>
-
-              {/* Posts List */}
+            {loading ? (
+              /* Loading Skeletons */
               <div className="space-y-6">
-                {posts.map((post) => (
-                  <PostCard key={post._id} post={post} />
+                {[...Array(5)].map((_, i) => (
+                  <div key={i} className="bg-gray-800 rounded-lg p-6 animate-pulse">
+                    <div className="h-4 bg-gray-700 rounded w-3/4 mb-4"></div>
+                    <div className="h-3 bg-gray-700 rounded w-1/2 mb-2"></div>
+                    <div className="h-3 bg-gray-700 rounded w-full mb-2"></div>
+                    <div className="h-3 bg-gray-700 rounded w-2/3"></div>
+                  </div>
                 ))}
               </div>
 
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center mt-8 space-x-2">
+            ) : posts.length === 0 ? (
 
-                  {/* Previous */}
-                  <button
-                    onClick={() => setPage(Math.max(1, page - 1))}
-                    disabled={page === 1}
-                    className={`px-4 py-2 rounded-lg ${
-                      page === 1
+              /* No Posts Found */
+              <div className="text-center py-12">
+                <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <Search className="w-12 h-12 text-gray-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">No posts found</h3>
+                <p className="text-gray-400">
+                  {selectedCategory !== 'all' || searchTerm
+                    ? 'Try adjusting your search or category filter.'
+                    : 'Be the first to share something with the community!'}
+                </p>
+              </div>
+
+            ) : (
+
+              <>
+                {/* Results Count */}
+                <div className="mb-6">
+                  <p className="text-gray-400 text-sm">
+                    {posts.length} {posts.length === 1 ? 'post' : 'posts'} found
+                    {selectedCategory !== 'all' && (
+                      <span> in {categories.find(c => c.value === selectedCategory)?.label}</span>
+                    )}
+                  </p>
+                </div>
+
+                {/* Posts List */}
+                <div className="space-y-6">
+                  {posts.map((post) => (
+                    <PostCard key={post._id} post={post} />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex justify-center mt-8 space-x-2">
+
+                    {/* Previous */}
+                    <button
+                      onClick={() => setPage(Math.max(1, page - 1))}
+                      disabled={page === 1}
+                      className={`px-4 py-2 rounded-lg ${page === 1
                         ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
                         : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }`}
-                  >
-                    Previous
-                  </button>
+                        }`}
+                    >
+                      Previous
+                    </button>
 
-                  {/* Page Numbers (SAFE FIXED VERSION) */}
-                  {[...Array(Math.min(5, totalPages || 1))].map((_, i) => {
-                    const offset = Math.max(1, Math.min(totalPages - 4, page - 2));
-                    const pageNum = offset + i;
+                    {/* Page Numbers (SAFE FIXED VERSION) */}
+                    {[...Array(Math.min(5, totalPages || 1))].map((_, i) => {
+                      const offset = Math.max(1, Math.min(totalPages - 4, page - 2));
+                      const pageNum = offset + i;
 
-                    if (pageNum > totalPages) return null;
+                      if (pageNum > totalPages) return null;
 
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => setPage(pageNum)}
-                        className={`px-4 py-2 rounded-lg ${
-                          page === pageNum
+                      return (
+                        <button
+                          key={pageNum}
+                          onClick={() => setPage(pageNum)}
+                          className={`px-4 py-2 rounded-lg ${page === pageNum
                             ? 'bg-[#17d059] text-white'
                             : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    );
-                  })}
+                            }`}
+                        >
+                          {pageNum}
+                        </button>
+                      );
+                    })}
 
-                  {/* Next */}
-                  <button
-                    onClick={() => setPage(Math.min(totalPages, page + 1))}
-                    disabled={page === totalPages}
-                    className={`px-4 py-2 rounded-lg ${
-                      page === totalPages
+                    {/* Next */}
+                    <button
+                      onClick={() => setPage(Math.min(totalPages, page + 1))}
+                      disabled={page === totalPages}
+                      className={`px-4 py-2 rounded-lg ${page === totalPages
                         ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
                         : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                    }`}
-                  >
-                    Next
-                  </button>
+                        }`}
+                    >
+                      Next
+                    </button>
 
-                </div>
-              )}
+                  </div>
+                )}
 
-            </>
-          )}
+              </>
+            )}
+
+          </div>
+
+          {/* Trending Sidebar */}
+          <div className="lg:w-80 flex-shrink-0">
+            <div className="sticky top-24">
+              <TrendingHashtags onTagClick={(tag) => {
+                setSearchTerm(`#${tag}`);
+                setPage(1);
+              }} />
+            </div>
+          </div>
 
         </div>
       </div>
@@ -280,3 +292,4 @@ const Home = () => {
 };
 
 export default Home;
+
