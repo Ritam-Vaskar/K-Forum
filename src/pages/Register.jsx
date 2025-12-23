@@ -75,7 +75,7 @@ const Register = () => {
     setLoading(true);
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/auth/verify-otp`, {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/auth/verify-otp`, {
         userId,
         otp
       });

@@ -16,7 +16,7 @@ const Admin = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/admin/stats`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/admin/stats`);
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -25,7 +25,7 @@ const Admin = () => {
 
   const fetchReportedPosts = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/admin/reported-posts`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/admin/reported-posts`);
       setReportedPosts(response.data);
     } catch (error) {
       console.error('Error fetching reported posts:', error);
@@ -36,7 +36,7 @@ const Admin = () => {
 
   const handleModeratePost = async (postId, action) => {
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/admin/moderate-post/${postId}`, { action });
+      await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/admin/moderate-post/${postId}`, { action });
       fetchReportedPosts();
     } catch (error) {
       console.error('Error moderating post:', error);
@@ -152,12 +152,11 @@ const Admin = () => {
                         <span>Reports: {post.reports.length}</span>
                       </div>
                     </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                      post.moderationStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
-                      post.moderationStatus === 'approved' ? 'bg-green-500/20 text-green-400' :
-                      post.moderationStatus === 'flagged' ? 'bg-orange-500/20 text-orange-400' :
-                      'bg-red-500/20 text-red-400'
-                    }`}>
+                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${post.moderationStatus === 'pending' ? 'bg-yellow-500/20 text-yellow-400' :
+                        post.moderationStatus === 'approved' ? 'bg-green-500/20 text-green-400' :
+                          post.moderationStatus === 'flagged' ? 'bg-orange-500/20 text-orange-400' :
+                            'bg-red-500/20 text-red-400'
+                      }`}>
                       {post.moderationStatus.toUpperCase()}
                     </span>
                   </div>

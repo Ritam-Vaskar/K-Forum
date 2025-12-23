@@ -30,7 +30,7 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       if (token) {
         try {
-          const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/auth/me`);
+          const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/auth/me`);
           // Ensure user object has id property
           setUser({ ...response.data, id: response.data._id });
         } catch (error) {

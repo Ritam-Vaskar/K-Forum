@@ -26,35 +26,43 @@ function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/register" element={<Register />} />
-                <Route 
-                  path="/create-post" 
+                <Route
+                  path="/create-post"
                   element={
                     <ProtectedRoute>
                       <CreatePost />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
                 <Route path="/post/:id" element={<PostDetail />} />
                 <Route path="/user/:id" element={<UserProfile />} />
-                <Route 
-                  path="/profile/:id" 
+                <Route
+                  path="/profile"
                   element={
                     <ProtectedRoute>
                       <Profile />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin" 
+                <Route
+                  path="/profile/:id"
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
                   element={
                     <ProtectedRoute requireAdmin>
                       <Admin />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
               </Routes>
             </main>
-            <Toaster 
+            <Toaster
               position="top-right"
               toastOptions={{
                 style: {

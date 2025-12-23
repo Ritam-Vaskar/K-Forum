@@ -9,9 +9,14 @@ axios.interceptors.request.use(
     (config) => {
         // Ensure we use the correct port or env var if not in offline mode
         const baseUrl = import.meta.env.VITE_BACKEND_API || 'http://localhost:5001';
-        if (config.url && !config.url.startsWith('http')) {
+
+        // Only prepend baseUrl if the URL is a relative path (starts with /)
+        // and doesn't already have the full URL
+        if (config.url && config.url.startsWith('/') && !config.url.startsWith('http')) {
             config.url = `${baseUrl}${config.url}`;
         }
+        // If URL already contains base URL or is a full http URL, don't modify it
+
         return config;
     },
     (error) => Promise.reject(error)

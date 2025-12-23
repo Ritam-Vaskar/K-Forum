@@ -17,8 +17,8 @@ const UserProfile = () => {
     const fetchUserProfile = async () => {
       try {
         const [userResponse, postsResponse] = await Promise.all([
-          axios.get(`${import.meta.env.VITE_BACKEND_API}/api/users/${id}`),
-          axios.get(`${import.meta.env.VITE_BACKEND_API}/api/users/${id}/posts?page=${currentPage}`)
+          axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/users/${id}`),
+          axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/users/${id}/posts?page=${currentPage}`)
         ]);
 
         setUser(userResponse.data);

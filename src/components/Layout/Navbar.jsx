@@ -46,7 +46,7 @@ const Navbar = () => {
                     <span>Create Post</span>
                   </Link>
                   <Link
-                    to={`/profile/${user.id}`}
+                    to="/profile"
                     className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
                   >
                     Profile
@@ -120,7 +120,7 @@ const Navbar = () => {
                   Create Post
                 </Link>
                 <Link
-                  to={`/profile/${user.id}`}
+                  to="/profile"
                   className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
                   onClick={() => setIsOpen(false)}
                 >

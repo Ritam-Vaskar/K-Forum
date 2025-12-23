@@ -41,7 +41,7 @@ const PostCard = ({ post, onDelete }) => {
     }
 
     try {
-      await axios.delete(`${import.meta.env.VITE_BACKEND_API}/api/posts/${post._id}`);
+      await axios.delete(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${post._id}`);
       toast.success('Post deleted successfully');
       if (onDelete) onDelete(post._id);
     } catch (error) {
@@ -64,7 +64,7 @@ const PostCard = ({ post, onDelete }) => {
     }
 
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/posts/${post._id}/report`, {
+      await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${post._id}/report`, {
         reason: reportReason
       });
       toast.success('Post reported successfully');
@@ -87,32 +87,32 @@ const PostCard = ({ post, onDelete }) => {
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center overflow-hidden">
               {post.author?.avatar ? (
-                <img 
-                  src={post.author.avatar} 
-                  alt={post.author.name} 
+                <img
+                  src={post.author.avatar}
+                  alt={post.author.name}
                   className="w-full h-full object-cover"
                 />
               ) : (
                 <User className="w-5 h-5 text-white" />
               )}
             </div>
-          <div>
-            <p className="text-white font-medium">
-              {post.author ? (
-                <Link 
-                  to={`/user/${post.author._id}`}
-                  className="hover:text-[#17d059] transition-colors"
-                >
-                  {post.author.name} ({post.author.studentId})
-                </Link>
-              ) : 'Anonymous'}
-            </p>
-            <p className="text-gray-400 text-sm flex items-center">
-              <Clock className="w-4 h-4 mr-1" />
-              {formatTime(post.createdAt)}
-            </p>
+            <div>
+              <p className="text-white font-medium">
+                {post.author ? (
+                  <Link
+                    to={`/user/${post.author._id}`}
+                    className="hover:text-[#17d059] transition-colors"
+                  >
+                    {post.author.name} ({post.author.studentId})
+                  </Link>
+                ) : 'Anonymous'}
+              </p>
+              <p className="text-gray-400 text-sm flex items-center">
+                <Clock className="w-4 h-4 mr-1" />
+                {formatTime(post.createdAt)}
+              </p>
+            </div>
           </div>
-        </div>
           <div className="flex items-center space-x-2">
             <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${getCategoryColor(post.category)}`}>
               {post.category.replace('-', ' ').toUpperCase()}
@@ -166,16 +166,16 @@ const PostCard = ({ post, onDelete }) => {
         {post.attachments && post.attachments.length > 0 && (
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
             {post.attachments.map((attachment, index) => (
-              <div 
-                key={index} 
+              <div
+                key={index}
                 className="relative group cursor-pointer aspect-square overflow-hidden rounded-lg"
                 onClick={() => {
                   setSelectedImageIndex(index);
                   setShowImageViewer(true);
                 }}
               >
-                <img 
-                  src={attachment.url} 
+                <img
+                  src={attachment.url}
                   alt={attachment.filename}
                   className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
                 />
@@ -189,7 +189,7 @@ const PostCard = ({ post, onDelete }) => {
           </div>
         )}
       </div>
-      
+
       {/* Image Viewer Modal */}
       {showImageViewer && (
         <ImageViewer

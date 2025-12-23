@@ -25,7 +25,7 @@ const PostDetail = () => {
 
   const fetchPost = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}`);
       setPost(response.data);
     } catch (error) {
       console.error('Error fetching post:', error);
@@ -35,7 +35,7 @@ const PostDetail = () => {
 
   const fetchComments = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}/comments`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/comments`);
       setComments(response.data);
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -51,7 +51,7 @@ const PostDetail = () => {
     }
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}/vote`, {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/vote`, {
         voteType
       });
       setPost({
@@ -71,7 +71,7 @@ const PostDetail = () => {
     }
 
     try {
-      await axios.delete(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}`);
+      await axios.delete(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}`);
       toast.success('Post deleted successfully');
       navigate('/');
     } catch (error) {
@@ -80,9 +80,9 @@ const PostDetail = () => {
   };
 
   const [showReportModal, setShowReportModal] = useState(false);
-const [reportReason, setReportReason] = useState('');
-const [showImageViewer, setShowImageViewer] = useState(false);
-const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  const [reportReason, setReportReason] = useState('');
+  const [showImageViewer, setShowImageViewer] = useState(false);
+  const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
   const handleReportPost = async () => {
     if (!user) {
@@ -96,7 +96,7 @@ const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     }
 
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}/report`, {
+      await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/report`, {
         reason: reportReason
       });
       toast.success('Post reported successfully');
@@ -119,7 +119,7 @@ const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     }
 
     try {
-      await axios.delete(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}/comments/${commentId}`);
+      await axios.delete(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/comments/${commentId}`);
       setComments(comments.filter(comment => comment._id !== commentId));
       setPost({
         ...post,
@@ -138,7 +138,7 @@ const [selectedImageIndex, setSelectedImageIndex] = useState(0);
     }
 
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}/comments/${commentId}/report`);
+      await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/comments/${commentId}/report`);
       toast.success('Comment reported successfully');
       setShowCommentOptions(null);
     } catch (error) {
@@ -155,7 +155,7 @@ const [selectedImageIndex, setSelectedImageIndex] = useState(0);
 
     setSubmittingComment(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API}/api/posts/${id}/comments`, {
+      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/comments`, {
         content: newComment,
         isAnonymous: isAnonymousComment
       });
@@ -257,19 +257,19 @@ const [selectedImageIndex, setSelectedImageIndex] = useState(0);
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center space-x-3">
-              <div className="w-12 h-12 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center">
-                <User className="w-6 h-6 text-white" />
+                <div className="w-12 h-12 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center">
+                  <User className="w-6 h-6 text-white" />
+                </div>
+                <div>
+                  <p className="text-white font-medium">
+                    {post.author ? `${post.author.name} (${post.author.studentId})` : 'Anonymous'}
+                  </p>
+                  <p className="text-gray-400 text-sm flex items-center">
+                    <Clock className="w-4 h-4 mr-1" />
+                    {formatTime(post.createdAt)}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="text-white font-medium">
-                  {post.author ? `${post.author.name} (${post.author.studentId})` : 'Anonymous'}
-                </p>
-                <p className="text-gray-400 text-sm flex items-center">
-                  <Clock className="w-4 h-4 mr-1" />
-                  {formatTime(post.createdAt)}
-                </p>
-              </div>
-            </div>
               <div className="flex items-center space-x-2">
                 <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${getCategoryColor(post.category)}`}>
                   {post.category.replace('-', ' ').toUpperCase()}
@@ -307,7 +307,7 @@ const [selectedImageIndex, setSelectedImageIndex] = useState(0);
           </div>
 
           <h1 className="text-3xl font-bold text-white mb-4">{post.title}</h1>
-          
+
           <div className="space-y-6">
             <div className="text-gray-300 mb-6 whitespace-pre-wrap">
               {post.content}
@@ -317,16 +317,16 @@ const [selectedImageIndex, setSelectedImageIndex] = useState(0);
             {post.attachments && post.attachments.length > 0 && (
               <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                 {post.attachments.map((attachment, index) => (
-                  <div 
-                    key={index} 
+                  <div
+                    key={index}
                     className="relative group cursor-pointer aspect-square overflow-hidden rounded-lg"
                     onClick={() => {
                       setSelectedImageIndex(index);
                       setShowImageViewer(true);
                     }}
                   >
-                    <img 
-                      src={attachment.url} 
+                    <img
+                      src={attachment.url}
                       alt={attachment.filename}
                       className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-200"
                     />

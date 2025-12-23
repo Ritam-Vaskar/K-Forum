@@ -13,9 +13,9 @@ const Profile = () => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editMode, setEditMode] = useState(false);
-  
-  // Use currentUser.id if no ID is provided in URL
-  const id = urlId || currentUser?.id;
+
+  // Use currentUser.id or currentUser._id if no ID is provided in URL
+  const id = urlId || currentUser?.id || currentUser?._id;
   const [editData, setEditData] = useState({
     name: '',
     year: '',
@@ -24,7 +24,7 @@ const Profile = () => {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileInputRef = useRef(null);
 
-  const isOwnProfile = currentUser?.id === id;
+  const isOwnProfile = currentUser && (currentUser.id === id || currentUser._id === id);
 
   useEffect(() => {
     fetchProfile();
@@ -33,7 +33,7 @@ const Profile = () => {
 
   const fetchProfile = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/users/${id}`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/users/${id}`);
       setProfile(response.data);
       setEditData({
         name: response.data.name,
@@ -47,7 +47,7 @@ const Profile = () => {
 
   const fetchUserPosts = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API}/api/users/${id}/posts`);
+      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/users/${id}/posts`);
       setPosts(response.data.posts);
     } catch (error) {
       console.error('Error fetching user posts:', error);
@@ -78,7 +78,7 @@ const Profile = () => {
 
     try {
       const response = await axios.put(
-        `${import.meta.env.VITE_BACKEND_API}/api/users/profile`,
+        `${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/users/profile`,
         formData,
         {
           headers: {
@@ -97,7 +97,7 @@ const Profile = () => {
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.put(`${import.meta.env.VITE_BACKEND_API}/api/users/profile`, editData);
+      const response = await axios.put(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/users/profile`, editData);
       setProfile({ ...profile, ...response.data });
       setEditMode(false);
     } catch (error) {
@@ -134,9 +134,9 @@ const Profile = () => {
                 <div className="relative w-24 h-24 mx-auto mb-4">
                   <div className="w-24 h-24 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center overflow-hidden">
                     {(profile.avatar || avatarPreview) ? (
-                      <img 
-                        src={avatarPreview || profile.avatar} 
-                        alt={profile.name} 
+                      <img
+                        src={avatarPreview || profile.avatar}
+                        alt={profile.name}
                         className="w-full h-full object-cover"
                       />
                     ) : (
