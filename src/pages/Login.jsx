@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import axios from '../services/axiosSetup';
 import toast from 'react-hot-toast';
 import { Mail, Lock, LogIn, Shield } from 'lucide-react';
 
@@ -38,10 +38,8 @@ const Login = () => {
     }
 
     setLoading(true);
-    const apiUrl = import.meta.env.VITE_BACKEND_API || 'http://localhost:5001';
-
     try {
-      const response = await axios.post(`${apiUrl}/api/auth/login`, formData);
+      const response = await axios.post('/api/auth/login', formData);
 
       if (response.data.requiresVerification) {
         setUserId(response.data.userId);
@@ -71,10 +69,8 @@ const Login = () => {
   const handleOTPSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    const apiUrl = import.meta.env.VITE_BACKEND_API || 'http://localhost:5001';
-
     try {
-      const response = await axios.post(`${apiUrl}/api/auth/verify-otp`, {
+      const response = await axios.post('/api/auth/verify-otp', {
         userId,
         otp: verificationOTP
       });

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../services/axiosSetup';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PostCard from '../components/Posts/PostCard';
@@ -37,24 +37,30 @@ const Home = () => {
   const fetchPosts = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts`, {
-        params: {
-          category: selectedCategory,
-          search: searchTerm,
-          sortBy,
-          page,
-          limit: 10
-        }
-      });
+      const params = {
+        category: selectedCategory,
+        sortBy,
+        page,
+        limit: 10
+      };
+
+      if (searchTerm.trim().startsWith('#')) {
+        params.tag = searchTerm.trim().substring(1);
+      } else if (searchTerm.trim()) {
+        params.search = searchTerm;
+      }
+
+      const response = await axios.get('/api/posts', { params });
 
       setPosts(response.data.posts || []);
-      setTotalPages(response.data.totalPages ?? 1); // FIX ✔
+      setTotalPages(response.data.totalPages ?? 1);
     } catch (error) {
       console.error('Error fetching posts:', error);
     } finally {
       setLoading(false);
     }
   };
+
 
   const handleSearch = (e) => {
     e.preventDefault();

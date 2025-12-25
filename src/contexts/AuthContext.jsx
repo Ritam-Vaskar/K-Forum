@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../services/axiosSetup';
 
 const AuthContext = createContext();
 
@@ -16,13 +16,9 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
-  // Set up axios interceptor
+  // Interceptor now handles this automatically from localStorage
   useEffect(() => {
-    if (token) {
-      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-    } else {
-      delete axios.defaults.headers.common['Authorization'];
-    }
+    // We already handle Authorization header in axiosSetup.js
   }, [token]);
 
   // Check if user is logged in on app start
@@ -30,7 +26,7 @@ export const AuthProvider = ({ children }) => {
     const checkAuth = async () => {
       if (token) {
         try {
-          const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/auth/me`);
+          const response = await axios.get('/api/auth/me');
           // Ensure user object has id property
           setUser({ ...response.data, id: response.data._id });
         } catch (error) {

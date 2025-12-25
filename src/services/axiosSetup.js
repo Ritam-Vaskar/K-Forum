@@ -2,96 +2,102 @@ import axios from 'axios';
 import { mockApi } from './mockApi';
 import toast from 'react-hot-toast';
 
+const API_BASE_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5001';
+
+const api = axios.create({
+    baseURL: API_BASE_URL,
+    headers: {
+        'Content-Type': 'application/json'
+    }
+});
+
 let isOfflineNotified = false;
 
-// Request Interceptor
-axios.interceptors.request.use(
+// Request Interceptor to add Auth Token
+api.interceptors.request.use(
     (config) => {
-        // Ensure we use the correct port or env var if not in offline mode
-        const baseUrl = import.meta.env.VITE_BACKEND_API || 'http://localhost:5001';
-
-        // Only prepend baseUrl if the URL is a relative path (starts with /)
-        // and doesn't already have the full URL
-        if (config.url && config.url.startsWith('/') && !config.url.startsWith('http')) {
-            config.url = `${baseUrl}${config.url}`;
+        const token = localStorage.getItem('token');
+        if (token) {
+            config.headers.Authorization = `Bearer ${token}`;
         }
-        // If URL already contains base URL or is a full http URL, don't modify it
-
         return config;
     },
     (error) => Promise.reject(error)
 );
 
-// Response Interceptor
-axios.interceptors.response.use(
+// Response Interceptor for Offline Fallback
+api.interceptors.response.use(
     (response) => response,
     async (error) => {
-        // Check for Network Error, connection refused, OR Server Errors (5xx)
-        const isNetworkError = error.message === 'Network Error' || error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED';
+        const { config } = error;
+
+        // Define what constitutes a network/server issue
+        const isNetworkError = !error.response || error.code === 'ERR_NETWORK' || error.code === 'ECONNREFUSED';
         const isServerError = error.response && error.response.status >= 500;
 
         if (isNetworkError || isServerError) {
-
             if (!isOfflineNotified) {
-                console.warn('⚠️ Backend unreachable or erroring. Switching to Offline Mock Mode.');
+                console.warn('⚠️ Backend issue. Switching to Offline Mock Mode.');
                 toast('Backend issue. Switching to Offline Mode.', { icon: '📡' });
                 isOfflineNotified = true;
             }
 
-            const { config } = error;
-
             // Route to Mock API based on URL
             try {
+                const url = config.url || '';
+                const method = (config.method || 'get').toLowerCase();
+
                 // --- AUTH --- //
-                if (config.url.includes('/auth/login')) {
-                    const data = JSON.parse(config.data);
+                if (url.includes('/auth/login')) {
+                    const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
                     const result = await mockApi.login(data);
                     return { data: result, status: 200 };
                 }
 
-                if (config.url.includes('/auth/register')) {
-                    const data = JSON.parse(config.data);
+                if (url.includes('/auth/register')) {
+                    const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
                     const result = await mockApi.register(data);
                     return { data: result, status: 200 };
                 }
 
-                if (config.url.includes('/auth/verify-otp')) {
-                    const data = JSON.parse(config.data);
+                if (url.includes('/auth/verify-otp')) {
+                    const data = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
                     const result = await mockApi.verifyOtp(data);
                     return { data: result, status: 200 };
                 }
 
                 // --- POSTS --- //
-                if (config.url.includes('/posts') && config.method === 'get') {
-                    const result = await mockApi.getPosts();
-                    return { data: result, status: 200 };
-                }
-
-                if (config.url.includes('/posts') && config.method === 'post') {
-                    // Handle FormData for post creation
-                    let postData = {};
-                    if (config.data instanceof FormData) {
-                        // Extract data from FormData
-                        postData = {
-                            title: config.data.get('title') || 'Untitled Post',
-                            content: config.data.get('content') || '',
-                            category: config.data.get('category') || 'general',
-                            tags: config.data.get('tags') || '',
-                            isAnonymous: config.data.get('isAnonymous') === 'true'
-                        };
-                    } else if (typeof config.data === 'string') {
-                        try {
-                            postData = JSON.parse(config.data);
-                        } catch (e) {
-                            postData = {};
+                if (url.includes('/posts')) {
+                    if (method === 'get') {
+                        // Check if it's a specific post ID
+                        const postIdMatch = url.match(/\/posts\/([a-zA-Z0-9_-]+)/);
+                        if (postIdMatch && !url.includes('/comments')) {
+                            // Mock single post fetch if needed (optional)
                         }
+
+                        const result = await mockApi.getPosts();
+                        return { data: result, status: 200 };
                     }
-                    const result = await mockApi.createPost(postData);
-                    return { data: result, status: 200 };
+
+                    if (method === 'post') {
+                        let postData = {};
+                        if (config.data instanceof FormData) {
+                            postData = {
+                                title: config.data.get('title'),
+                                content: config.data.get('content'),
+                                category: config.data.get('category'),
+                                tags: config.data.get('tags'),
+                                isAnonymous: config.data.get('isAnonymous') === 'true'
+                            };
+                        } else {
+                            postData = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
+                        }
+                        const result = await mockApi.createPost(postData);
+                        return { data: result, status: 200 };
+                    }
                 }
 
             } catch (mockError) {
-                // If mock API throws, return it as a proper axios error response
                 return Promise.reject(mockError);
             }
         }
@@ -100,4 +106,5 @@ axios.interceptors.response.use(
     }
 );
 
-export default axios;
+export default api;
+

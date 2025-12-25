@@ -72,17 +72,24 @@ router.get('/', async (req, res) => {
       limit = 10,
       category,
       search,
+      tag,
       sortBy = 'createdAt',
       sortOrder = 'desc'
     } = req.query;
 
     let query = { moderationStatus: 'approved' };
 
+    console.log('Search Params:', { category, search, tag });
+
     if (category && category !== 'all') {
       query.category = category;
     }
 
-    if (search) {
+    if (tag) {
+      console.log('Filtering by tag:', tag);
+      query.tags = tag.toLowerCase();
+    } else if (search) {
+      console.log('Text search:', search);
       query.$text = { $search: search };
     }
 

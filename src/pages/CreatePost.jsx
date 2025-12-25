@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import axios from '../services/axiosSetup';
 import toast from 'react-hot-toast';
 import { Send, Tag, Eye, EyeOff, Image, X } from 'lucide-react';
 
@@ -96,7 +96,7 @@ const CreatePost = () => {
       });
 
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts`,
+        '/api/posts',
         formDataToSend
       );
       toast.success('Post created successfully!');
