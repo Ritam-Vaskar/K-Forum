@@ -4,6 +4,7 @@ import Comment from '../models/Comment.js';
 import { auth } from '../middleware/auth.js';
 import { uploadImage } from '../config/cloudinary.js';
 import multer from 'multer';
+import { moderateContent } from '../services/aiModeration.js';
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -156,6 +157,23 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
   try {
     const { title, content, category, tags, isAnonymous } = req.body;
 
+    // AI Content Moderation
+    const textToAnalyze = `${title}\n${content}`;
+    console.log('Analyzing text for toxicity...');
+    const moderationResult = await moderateContent(textToAnalyze);
+
+    console.log("Moderation Result:", moderationResult);
+
+    if (moderationResult.status === 'REJECTED') {
+      return res.status(400).json({
+        message: 'Post rejected due to content policy violations.',
+        reason: moderationResult.reason,
+        details: moderationResult // Optional: send back details for debugging/feedback
+      });
+    }
+
+    const initialStatus = moderationResult.status === 'FLAGGED' ? 'flagged' : 'approved';
+
     // Extract hashtags from content (Twitter-style)
     const hashtagRegex = /#(\w+)/g;
     const extractedHashtags = [];
@@ -202,7 +220,8 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
       category,
       tags: allTags,
       isAnonymous: isAnonymous === 'true',
-      attachments: cleanAttachments
+      attachments: cleanAttachments,
+      moderationStatus: initialStatus // Apply AI decision
     });
 
     await post.save();
