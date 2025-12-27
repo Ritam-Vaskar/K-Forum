@@ -86,216 +86,206 @@ const Home = () => {
     navigate('/create-post');
   };
 
+  const [activeTab, setActiveTab] = useState('confessions'); // confessions | friends
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 relative">
+    <div className="relative min-h-[calc(100vh-4rem)]">
 
       {/* Floating Action Button */}
       <button
         onClick={handleCreatePost}
-        className="fixed bottom-4 right-4 bg-[#17d059] hover:bg-[#15b84f] text-white w-14 h-14 rounded-full flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 z-50"
+        className="fixed bottom-8 right-8 bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-white w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg hover:shadow-emerald-500/50 hover:scale-105 transition-all duration-300 z-50 animate-bounce-in"
       >
-        <Plus className="w-6 h-6" />
+        <Plus className="w-8 h-8" />
       </button>
 
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-
-        {/* Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-white mb-4">
-            Welcome to <span className="text-[#17d059]">K-Forum</span>
+      {/* Hero Header Section */}
+      <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
+        <div>
+          <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-500 mb-2 tracking-tight">
+            {activeTab === 'confessions' ? 'Secret Confessions' : 'Campus Friends'}
           </h1>
-          <p className="text-xl text-gray-300 max-w-2xl mx-auto">
-            Your secure community platform for KIIT students. Share, discuss, and connect anonymously or publicly.
+          <p className="text-gray-400 text-lg">
+            {activeTab === 'confessions' ? 'What happens at KIIT, stays on K-Forum.' : 'Connect with your batchmates anonymously.'}
           </p>
         </div>
 
-        {/* Search + Filters */}
-        <div className="mb-8 space-y-4">
+        {/* Premium Toggle Switch */}
+        <div className="glass-panel p-1 rounded-2xl flex relative w-full md:w-auto">
+          <div
+            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl transition-all duration-500 ease-out shadow-lg shadow-emerald-500/20 ${activeTab === 'friends' ? 'translate-x-full left-0' : 'left-1'}`}
+          />
+          <button
+            onClick={() => setActiveTab('confessions')}
+            className={`relative z-10 px-8 py-3 rounded-xl text-sm font-bold transition-colors duration-300 ${activeTab === 'confessions' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+          >
+            CONFESSIONS
+          </button>
+          <button
+            onClick={() => setActiveTab('friends')}
+            className={`relative z-10 px-8 py-3 rounded-xl text-sm font-bold transition-colors duration-300 ${activeTab === 'friends' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+          >
+            FRIENDS
+          </button>
+        </div>
+      </div>
 
-          {/* Search Bar */}
-          <form onSubmit={handleSearch} className="flex gap-4">
-            <div className="flex-1 relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-              <input
-                type="text"
-                placeholder="Search posts..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-gray-800 text-white pl-10 pr-4 py-3 rounded-lg border border-gray-700 focus:border-[#17d059] focus:outline-none"
-              />
-            </div>
-            <button
-              type="submit"
-              className="bg-[#17d059] hover:bg-[#15b84f] text-white px-6 py-3 rounded-lg flex items-center space-x-2"
-            >
-              <Search className="w-5 h-5" />
-              <span>Search</span>
-            </button>
-          </form>
+      {/* Main Content Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
 
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
-
-            {/* Category Filter */}
-            <div className="flex items-center space-x-2">
-              <Tag className="text-gray-400 w-5 h-5" />
-              <span className="text-gray-300">Category:</span>
-              <select
-                value={selectedCategory}
-                onChange={(e) => handleCategoryChange(e.target.value)}
-                className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-[#17d059]"
-              >
-                {categories.map((cat) => (
-                  <option key={cat.value} value={cat.value}>{cat.label}</option>
+        {/* Left Column: Filters (Sticky) */}
+        <div className="hidden lg:block lg:col-span-3">
+          <div className="sticky top-24 space-y-6">
+            <div className="glass-panel rounded-3xl p-6">
+              <h3 className="font-bold text-white mb-6 flex items-center gap-2">
+                <Filter className="w-5 h-5 text-emerald-400" />
+                Filters
+              </h3>
+              <div className="space-y-2">
+                <button
+                  onClick={() => setSelectedCategory('all')}
+                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedCategory === 'all' ? 'bg-white/10 text-emerald-400 border-l-2 border-emerald-500' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                >
+                  All Posts
+                </button>
+                {categories.filter(c => c.value !== 'all').map(cat => (
+                  <button
+                    key={cat.value}
+                    onClick={() => setSelectedCategory(cat.value)}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedCategory === cat.value ? 'bg-white/10 text-emerald-400 border-l-2 border-emerald-500' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                  >
+                    {cat.label}
+                  </button>
                 ))}
-              </select>
+              </div>
             </div>
-
-            {/* Sort Filter */}
-            <div className="flex items-center space-x-2">
-              <Filter className="text-gray-400 w-5 h-5" />
-              <span className="text-gray-300">Sort by:</span>
-              <select
-                value={sortBy}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="bg-gray-800 text-white px-4 py-2 rounded-lg border border-gray-700 focus:border-[#17d059]"
-              >
-                <option value="createdAt">Latest</option>
-                <option value="upvotes">Most Upvoted</option>
-                <option value="commentCount">Most Discussed</option>
-                <option value="viewCount">Most Viewed</option>
-              </select>
-            </div>
-
           </div>
         </div>
 
-        {/* Main Content Area - Two Column Layout */}
-        <div className="flex flex-col lg:flex-row gap-8">
+        {/* Center Column: Feed */}
+        <div className="lg:col-span-6">
 
-          {/* Posts Section */}
-          <div className="flex-1">
-
-            {loading ? (
-              /* Loading Skeletons */
-              <div className="space-y-6">
-                {[...Array(5)].map((_, i) => (
-                  <div key={i} className="bg-gray-800 rounded-lg p-6 animate-pulse">
-                    <div className="h-4 bg-gray-700 rounded w-3/4 mb-4"></div>
-                    <div className="h-3 bg-gray-700 rounded w-1/2 mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-full mb-2"></div>
-                    <div className="h-3 bg-gray-700 rounded w-2/3"></div>
-                  </div>
-                ))}
-              </div>
-
-            ) : posts.length === 0 ? (
-
-              /* No Posts Found */
-              <div className="text-center py-12">
-                <div className="w-24 h-24 bg-gray-800 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <Search className="w-12 h-12 text-gray-600" />
-                </div>
-                <h3 className="text-xl font-semibold text-white mb-2">No posts found</h3>
-                <p className="text-gray-400">
-                  {selectedCategory !== 'all' || searchTerm
-                    ? 'Try adjusting your search or category filter.'
-                    : 'Be the first to share something with the community!'}
-                </p>
-              </div>
-
-            ) : (
-
-              <>
-                {/* Results Count */}
-                <div className="mb-6">
-                  <p className="text-gray-400 text-sm">
-                    {posts.length} {posts.length === 1 ? 'post' : 'posts'} found
-                    {selectedCategory !== 'all' && (
-                      <span> in {categories.find(c => c.value === selectedCategory)?.label}</span>
-                    )}
-                  </p>
-                </div>
-
-                {/* Posts List */}
-                <div className="space-y-6">
-                  {posts.map((post) => (
-                    <PostCard key={post._id} post={post} />
-                  ))}
-                </div>
-
-                {/* Pagination */}
-                {totalPages > 1 && (
-                  <div className="flex justify-center mt-8 space-x-2">
-
-                    {/* Previous */}
-                    <button
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      disabled={page === 1}
-                      className={`px-4 py-2 rounded-lg ${page === 1
-                        ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                      Previous
-                    </button>
-
-                    {/* Page Numbers (SAFE FIXED VERSION) */}
-                    {[...Array(Math.min(5, totalPages || 1))].map((_, i) => {
-                      const offset = Math.max(1, Math.min(totalPages - 4, page - 2));
-                      const pageNum = offset + i;
-
-                      if (pageNum > totalPages) return null;
-
-                      return (
-                        <button
-                          key={pageNum}
-                          onClick={() => setPage(pageNum)}
-                          className={`px-4 py-2 rounded-lg ${page === pageNum
-                            ? 'bg-[#17d059] text-white'
-                            : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                            }`}
-                        >
-                          {pageNum}
-                        </button>
-                      );
-                    })}
-
-                    {/* Next */}
-                    <button
-                      onClick={() => setPage(Math.min(totalPages, page + 1))}
-                      disabled={page === totalPages}
-                      className={`px-4 py-2 rounded-lg ${page === totalPages
-                        ? 'bg-gray-800 text-gray-600 cursor-not-allowed'
-                        : 'bg-gray-800 text-gray-300 hover:bg-gray-700'
-                        }`}
-                    >
-                      Next
-                    </button>
-
-                  </div>
-                )}
-
-              </>
-            )}
-
+          {/* Mobile Filter Bar (Visible only on small screens) */}
+          <div className="lg:hidden glass-panel rounded-2xl p-4 mb-6 flex gap-2 overflow-x-auto scrollbar-hide">
+            {categories.map(cat => (
+              <button
+                key={cat.value}
+                onClick={() => setSelectedCategory(cat.value)}
+                className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold ${selectedCategory === cat.value ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-400'}`}
+              >
+                {cat.label}
+              </button>
+            ))}
           </div>
 
-          {/* Trending Sidebar */}
-          <div className="lg:w-80 flex-shrink-0">
-            <div className="sticky top-24">
+          {/* Search Bar */}
+          <div className="relative mb-8 group">
+            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
+            <div className="relative bg-gray-900 rounded-2xl p-2 flex items-center glass-panel">
+              <Search className="text-gray-500 w-5 h-5 ml-4" />
+              <input
+                type="text"
+                placeholder="Search for secrets..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-transparent text-white px-4 py-3 focus:outline-none placeholder-gray-600"
+              />
+              <select
+                value={sortBy}
+                onChange={(e) => handleSortChange(e.target.value)}
+                className="bg-gray-800 text-gray-300 text-sm rounded-xl px-4 py-2 border-none outline-none cursor-pointer hover:bg-gray-700 transition-colors mr-2"
+              >
+                <option value="createdAt">Newest</option>
+                <option value="upvotes">Top</option>
+                <option value="commentCount">Hot</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Posts Feed */}
+          {loading ? (
+            <div className="space-y-8">
+              {[1, 2, 3].map(i => (
+                <div key={i} className="glass-card rounded-3xl p-8 h-72 animate-pulse bg-gray-800/50" />
+              ))}
+            </div>
+          ) : posts.length > 0 ? (
+            <div className="space-y-8">
+              {posts.map((post, idx) => (
+                <div key={post._id} style={{ animationDelay: `${idx * 100}ms` }} className="animate-bounce-in">
+                  <PostCard post={post} />
+                </div>
+              ))}
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center gap-4 mt-12">
+                  <button
+                    onClick={() => setPage(Math.max(1, page - 1))}
+                    disabled={page === 1}
+                    className="px-6 py-3 rounded-xl glass-panel text-white disabled:opacity-30 hover:bg-white/10 transition-all font-bold"
+                  >
+                    Prev
+                  </button>
+                  <button
+                    onClick={() => setPage(Math.min(totalPages, page + 1))}
+                    disabled={page === totalPages}
+                    className="px-6 py-3 rounded-xl glass-panel text-white disabled:opacity-30 hover:bg-white/10 transition-all font-bold"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="text-center py-20 px-6 glass-panel rounded-3xl border border-dashed border-gray-700">
+              <div className="w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Search className="w-10 h-10 text-gray-600" />
+              </div>
+              <h3 className="text-2xl font-bold text-white mb-2">No confessions found</h3>
+              <p className="text-gray-400">Be the first to share a secret here.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Right Column: Trending (Sticky) */}
+        <div className="hidden lg:block lg:col-span-3">
+          <div className="sticky top-24 space-y-6">
+
+            {/* Stats Card */}
+            <div className="glass-card rounded-3xl p-6 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-emerald-500/20 transition-all duration-700" />
+              <h3 className="font-bold text-white mb-1">Campus Pulse</h3>
+              <p className="text-xs text-gray-400 mb-4">Live Activity</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-white/5 rounded-2xl p-3 text-center">
+                  <div className="text-2xl font-black text-emerald-400">24</div>
+                  <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Online</div>
+                </div>
+                <div className="bg-white/5 rounded-2xl p-3 text-center">
+                  <div className="text-2xl font-black text-cyan-400">{posts.length}</div>
+                  <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Posts</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Trending Hashtags */}
+            <div className="glass-panel rounded-3xl p-6">
+              <h3 className="font-bold text-white mb-6 flex items-center gap-2">
+                <Tag className="w-4 h-4 text-emerald-400" />
+                Trending Now
+              </h3>
               <TrendingHashtags onTagClick={(tag) => {
                 setSearchTerm(`#${tag}`);
                 setPage(1);
               }} />
             </div>
           </div>
-
         </div>
+
       </div>
     </div>
   );
 };
 
 export default Home;
-

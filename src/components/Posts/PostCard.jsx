@@ -81,7 +81,7 @@ const PostCard = ({ post, onDelete }) => {
   };
 
   return (
-    <div className="bg-gray-800 rounded-lg p-6 shadow-lg hover:shadow-xl transition-all duration-300 border border-gray-700 hover:border-[#17d059]/30 relative">
+    <div className="glass-card rounded-2xl p-6 mb-6 hover:bg-white/5 transition-all duration-300 relative group border border-gray-700/30">
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">
