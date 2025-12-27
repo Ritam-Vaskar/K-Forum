@@ -1,58 +1,96 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Flame, PlusSquare, User, Search } from 'lucide-react';
+import { Home, Gamepad2, PlusSquare, Search, User, Menu, X, Sparkles } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 
 const MobileHeader = () => {
     const { user } = useAuth();
+    const [isOpen, setIsOpen] = useState(false);
+
+    const toggleMenu = () => setIsOpen(!isOpen);
+    const closeMenu = () => setIsOpen(false);
+
+    const navItems = [
+        { path: '/', icon: Home, label: 'Home' },
+        { path: '/create-post', icon: PlusSquare, label: 'Create Post' },
+        { path: '/wordle', icon: Gamepad2, label: 'K-Wordle' },
+        { path: '/', icon: Search, label: 'Search' },
+        { path: '/profile', icon: User, label: 'Profile' }
+    ];
 
     return (
-        <div className="md:hidden fixed top-0 left-0 right-0 z-50 glass-card border-b border-gray-700/50 px-4 py-3">
-            <div className="flex items-center justify-between mb-4">
+        <>
+            {/* Top Bar */}
+            <div className="md:hidden fixed top-0 left-0 right-0 z-[60] glass-panel border-b border-gray-700/50 px-4 py-3 flex items-center justify-between backdrop-blur-xl">
+                {/* Logo */}
                 <div className="flex items-center gap-2">
-                    <div className="w-8 h-8 bg-gradient-to-tr from-emerald-400 to-cyan-500 rounded-lg flex items-center justify-center">
-                        <span className="text-white font-bold">K</span>
+                    <div className="w-8 h-8 bg-gradient-to-tr from-emerald-400 to-cyan-500 rounded-lg flex items-center justify-center shadow-lg shadow-emerald-500/20">
+                        <span className="text-white font-black text-lg">K</span>
                     </div>
-                    <span className="text-xl font-bold text-white">Forum</span>
+                    <span className="text-lg font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
+                        Forum
+                    </span>
                 </div>
 
-                {/* Profile Avatar (Top Right) */}
-                <NavLink to="/profile" className="relative">
-                    <img
-                        src={user?.avatar || `https://ui-avatars.com/api/?name=${user?.name || 'User'}&background=10b981&color=fff`}
-                        alt="Profile"
-                        className="w-9 h-9 rounded-full border border-emerald-500/50"
-                    />
-                </NavLink>
+                {/* Hamburger Button */}
+                <button
+                    onClick={toggleMenu}
+                    className="p-2 text-gray-300 hover:text-white transition-colors active:scale-95"
+                >
+                    {isOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+                </button>
             </div>
 
-            {/* Grid Navigation */}
-            <nav className="grid grid-cols-5 gap-2">
-                <NavLink to="/" className={({ isActive }) => `flex flex-col items-center justify-center p-2 rounded-xl transition-all ${isActive ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400'}`}>
-                    <Home className="w-5 h-5 mb-1" />
-                    <span className="text-[10px]">Home</span>
-                </NavLink>
+            {/* Full Screen Menu Overlay */}
+            <div
+                className={`md:hidden fixed inset-0 z-[55] bg-gray-900/95 backdrop-blur-2xl transition-all duration-300 ease-in-out ${isOpen ? 'opacity-100 translate-x-0' : 'opacity-0 translate-x-full pointer-events-none'
+                    }`}
+            >
+                <div className="flex flex-col h-full pt-20 px-6 pb-8">
+                    {/* User Profile Snippet */}
+                    {user && (
+                        <div className="flex items-center gap-4 mb-8 p-4 bg-white/5 rounded-2xl border border-white/10">
+                            <img
+                                src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=10b981&color=fff`}
+                                alt={user.name}
+                                className="w-12 h-12 rounded-full border-2 border-emerald-500/30"
+                            />
+                            <div>
+                                <h3 className="text-white font-bold text-lg">{user.name}</h3>
+                                <p className="text-emerald-400 text-sm font-medium">@{user.studentId}</p>
+                            </div>
+                        </div>
+                    )}
 
-                <NavLink to="/wordle" className={({ isActive }) => `flex flex-col items-center justify-center p-2 rounded-xl transition-all ${isActive ? 'bg-amber-500/20 text-amber-400' : 'text-gray-400'}`}>
-                    <Flame className="w-5 h-5 mb-1" />
-                    <span className="text-[10px]">Wordle</span>
-                </NavLink>
+                    {/* Navigation Links */}
+                    <nav className="flex-1 space-y-2">
+                        {navItems.map((item) => (
+                            <NavLink
+                                key={item.label}
+                                to={item.path}
+                                onClick={closeMenu}
+                                className={({ isActive }) => `
+                                    flex items-center gap-4 p-4 rounded-xl transition-all duration-200
+                                    ${isActive
+                                        ? 'bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 text-emerald-400 border border-emerald-500/30'
+                                        : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                                    }
+                                `}
+                            >
+                                <item.icon className="w-6 h-6" strokeWidth={2.5} />
+                                <span className="font-bold text-lg">{item.label}</span>
+                                {isActive && <Sparkles className="w-4 h-4 ml-auto text-emerald-400 animate-pulse" />}
+                            </NavLink>
+                        ))}
+                    </nav>
 
-                <NavLink to="/create-post" className="flex flex-col items-center justify-center p-2 rounded-xl bg-emerald-500 text-white shadow-lg shadow-emerald-500/30 transform -translate-y-2">
-                    <PlusSquare className="w-6 h-6" />
-                </NavLink>
-
-                <NavLink to="/search" className={({ isActive }) => `flex flex-col items-center justify-center p-2 rounded-xl transition-all ${isActive ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400'}`}>
-                    <Search className="w-5 h-5 mb-1" />
-                    <span className="text-[10px]">Search</span>
-                </NavLink>
-
-                <NavLink to="/profile" className={({ isActive }) => `flex flex-col items-center justify-center p-2 rounded-xl transition-all ${isActive ? 'bg-emerald-500/20 text-emerald-400' : 'text-gray-400'}`}>
-                    <User className="w-5 h-5 mb-1" />
-                    <span className="text-[10px]">Profile</span>
-                </NavLink>
-            </nav>
-        </div>
+                    {/* Footer */}
+                    <p className="text-center text-gray-600 text-xs mt-auto">
+                        K-Forum v2.0 • Made with ❤️
+                    </p>
+                </div>
+            </div>
+        </>
     );
 };
 
