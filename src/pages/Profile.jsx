@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import PostCard from '../components/Posts/PostCard';
-import { User, Mail, GraduationCap, Calendar, Trophy, MessageCircle, ThumbsUp, Edit3, Camera } from 'lucide-react';
+import { User, Mail, GraduationCap, Calendar, Trophy, MessageCircle, ThumbsUp, Edit3, Camera, Flame, Target, Gamepad2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
@@ -123,6 +123,8 @@ const Profile = () => {
     );
   }
 
+  const wordleStreak = profile.wordleStreak || { current: 0, max: 0, totalWins: 0 };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -235,9 +237,100 @@ const Profile = () => {
                 </div>
               </div>
 
+              {/* 🔥 WORDLE STREAK SECTION */}
+              <div className="mt-6 pt-6 border-t border-gray-700">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-white flex items-center gap-2">
+                    <Gamepad2 className="w-5 h-5 text-amber-400" />
+                    Wordle Stats
+                  </h3>
+                  {isOwnProfile && (
+                    <Link
+                      to="/wordle"
+                      className="text-sm text-amber-400 hover:text-amber-300 transition-colors"
+                    >
+                      Play Now →
+                    </Link>
+                  )}
+                </div>
+
+                {/* Fire Streak Display */}
+                <div className={`relative p-4 rounded-xl mb-4 ${wordleStreak.current > 0
+                    ? 'bg-gradient-to-r from-orange-500/20 via-red-500/20 to-orange-500/20 border border-orange-500/30'
+                    : 'bg-gray-700/50 border border-gray-600'
+                  }`}>
+                  <div className="flex items-center justify-center gap-3">
+                    <div className={`relative ${wordleStreak.current > 0 ? 'animate-pulse' : ''}`}>
+                      <Flame
+                        className={`w-12 h-12 ${wordleStreak.current > 0
+                            ? 'text-orange-400 drop-shadow-lg'
+                            : 'text-gray-500'
+                          }`}
+                        style={{
+                          filter: wordleStreak.current > 0
+                            ? 'drop-shadow(0 0 10px rgba(251, 146, 60, 0.5))'
+                            : 'none'
+                        }}
+                      />
+                      {wordleStreak.current > 0 && (
+                        <div className="absolute -top-1 -right-1">
+                          <span className="flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-orange-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-orange-500"></span>
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-center">
+                      <p className={`text-4xl font-bold ${wordleStreak.current > 0
+                          ? 'text-orange-400'
+                          : 'text-gray-400'
+                        }`}>
+                        {wordleStreak.current}
+                      </p>
+                      <p className="text-sm text-gray-400">
+                        {wordleStreak.current === 1 ? 'Day Streak' : 'Day Streak'}
+                      </p>
+                    </div>
+                  </div>
+
+                  {wordleStreak.current >= 7 && (
+                    <div className="mt-3 text-center">
+                      <span className="px-3 py-1 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-bold rounded-full animate-pulse">
+                        🔥 On Fire!
+                      </span>
+                    </div>
+                  )}
+
+                  {wordleStreak.current === 0 && wordleStreak.max > 0 && (
+                    <p className="mt-2 text-center text-gray-500 text-sm">
+                      Streak broken! Start a new one today.
+                    </p>
+                  )}
+                </div>
+
+                {/* Wordle Stats Grid */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-gray-700/50 rounded-lg p-3 text-center border border-gray-600">
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <Trophy className="w-4 h-4 text-purple-400" />
+                    </div>
+                    <p className="text-xl font-bold text-purple-400">{wordleStreak.max}</p>
+                    <p className="text-xs text-gray-400">Best Streak</p>
+                  </div>
+                  <div className="bg-gray-700/50 rounded-lg p-3 text-center border border-gray-600">
+                    <div className="flex items-center justify-center gap-1 mb-1">
+                      <Target className="w-4 h-4 text-emerald-400" />
+                    </div>
+                    <p className="text-xl font-bold text-emerald-400">{wordleStreak.totalWins}</p>
+                    <p className="text-xs text-gray-400">Total Wins</p>
+                  </div>
+                </div>
+              </div>
+
               {/* Stats */}
               <div className="mt-6 pt-6 border-t border-gray-700">
-                <h3 className="text-lg font-semibold text-white mb-4">Statistics</h3>
+                <h3 className="text-lg font-semibold text-white mb-4">Forum Statistics</h3>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-[#17d059]">{profile.postCount || 0}</div>

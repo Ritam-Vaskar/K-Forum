@@ -117,6 +117,16 @@ const PostCard = ({ post, onDelete }) => {
             <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${getCategoryColor(post.category)}`}>
               {post.category.replace('-', ' ').toUpperCase()}
             </span>
+            {post.moderationStatus === 'flagged' && (
+              <span className="px-3 py-1 rounded-full text-xs font-medium text-white bg-red-600 animate-pulse">
+                FLAGGED
+              </span>
+            )}
+            {post.moderationStatus === 'pending' && (
+              <span className="px-3 py-1 rounded-full text-xs font-medium text-white bg-yellow-600">
+                PENDING REVIEW
+              </span>
+            )}
             <div className="relative">
               <button
                 onClick={() => setShowOptions(!showOptions)}

@@ -12,6 +12,7 @@ import PostDetail from './pages/PostDetail';
 import Profile from './pages/Profile';
 import UserProfile from './pages/UserProfile';
 import Admin from './pages/Admin';
+import Wordle from './pages/Wordle';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 
 function App() {
@@ -49,6 +50,14 @@ function App() {
                   element={
                     <ProtectedRoute>
                       <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/wordle"
+                  element={
+                    <ProtectedRoute>
+                      <Wordle />
                     </ProtectedRoute>
                   }
                 />

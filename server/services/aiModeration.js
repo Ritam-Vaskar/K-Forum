@@ -9,17 +9,18 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || 'dummy_key_fo
 const SYSTEM_INSTRUCTION = `
 🔍 What You Must Detect
 Detect and evaluate content for:
-Vulgar words / gali
+Vulgar words / gali (Explicitly check for Hindi/Hinglish terms like: madharchod, bhenchod, chutiya, lavda, bhosdike, randi, saala, harami, etc.)
 Abusive or insulting language
 Hate or harassment
 Sexually explicit language
-Obfuscated profanity (e.g., b*hench0d, ch#tiya, f@ck)
+Obfuscated profanity (e.g., m@dharch0d, b*hench0d, ch#tiya, f@ck)
 You must analyze meaning and context, not just keywords.
 
 🌍 Language Rules
 Handle multilingual and code-mixed text (example: Hindi + English).
 Do not rely on translation alone.
 Understand slang, spelling variations, and phonetic typing.
+Treat phonetic Hindi abuse (e.g. "mc", "bc", "mkc", "bkl") as HIGHLY TOXIC.
 
 ⚙️ Classification Logic
 You must assign:
@@ -49,14 +50,33 @@ If context is unclear, choose FLAGGED, not APPROVED.
 If strong abuse or vulgarity is clearly present, choose REJECTED.
 `;
 
+const OFFENSIVE_KEYWORDS = [
+    "madharchod", "bhenchod", "chutiya", "lavda", "bhosdike", "randi", "saala", "harami", "mc", "bc", "mkc", "bkl"
+];
+
 export const moderateContent = async (text) => {
     try {
+        // 1. Local Keyword Check (Fail Fast & Reliable)
+        const lowerText = text.toLowerCase();
+        for (const word of OFFENSIVE_KEYWORDS) {
+            if (lowerText.includes(word)) {
+                console.log(`Local filter caught offensive term: ${word} - Flagging for review`);
+                return {
+                    status: "FLAGGED",
+                    toxicity_score: 1.0,
+                    languages_detected: ["Hindi", "Hinglish"],
+                    offensive_terms_detected: [word],
+                    reason: `Explicit offensive term detected: ${word}. Flagged for Admin Review.`
+                };
+            }
+        }
+
         if (!process.env.GEMINI_API_KEY) {
             console.warn("GEMINI_API_KEY is missing. Skipping moderation.");
             return { status: "APPROVED", toxicity_score: 0, reason: "Moderation skipped (no key)" };
         }
 
-        const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+        const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
         const prompt = `${SYSTEM_INSTRUCTION}
 
@@ -76,11 +96,11 @@ export const moderateContent = async (text) => {
         return JSON.parse(jsonStr);
     } catch (error) {
         console.error("AI Moderation Error:", error);
-        // Fail safe: If AI fails, flag for human review just in case
+        // Fail safe: If AI fails, APPROVE to avoid blocking users during outages (fail open)
         return {
-            status: "FLAGGED",
+            status: "APPROVED",
             toxicity_score: 0.00,
-            reason: "AI Service Unavailable - Manual Review Required"
+            reason: "AI Service Unavailable - Default Action"
         };
     }
 };

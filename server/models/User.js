@@ -65,6 +65,25 @@ const userSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  // Wordle Streak System
+  wordleStreak: {
+    current: {
+      type: Number,
+      default: 0
+    },
+    max: {
+      type: Number,
+      default: 0
+    },
+    lastPlayedDate: {
+      type: Date,
+      default: null
+    },
+    totalWins: {
+      type: Number,
+      default: 0
+    }
+  },
   preferences: {
     allowAnonymous: {
       type: Boolean,

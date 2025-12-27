@@ -78,7 +78,7 @@ router.get('/', async (req, res) => {
       sortOrder = 'desc'
     } = req.query;
 
-    let query = { moderationStatus: 'approved' };
+    let query = { moderationStatus: 'approved' }; // Only show approved posts publicly
 
     console.log('Search Params:', { category, search, tag });
 

@@ -46,11 +46,25 @@ router.get('/reported-posts', auth, isAdmin, async (req, res) => {
   }
 });
 
+// Get AI-flagged posts (for moderation)
+router.get('/flagged-posts', auth, isAdmin, async (req, res) => {
+  try {
+    const posts = await Post.find({ moderationStatus: 'flagged' })
+      .populate('author', 'name studentId')
+      .sort({ createdAt: -1 });
+
+    res.json(posts);
+  } catch (error) {
+    console.error('Get flagged posts error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Moderate post
 router.post('/moderate-post/:id', auth, isAdmin, async (req, res) => {
   try {
     const { action } = req.body; // 'approve', 'flag', 'remove'
-    
+
     const post = await Post.findByIdAndUpdate(
       req.params.id,
       { moderationStatus: action === 'approve' ? 'approved' : action },
