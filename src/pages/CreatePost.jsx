@@ -121,198 +121,215 @@ const CreatePost = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-12">
+
+    <div className="relative z-10 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="bg-gray-800 rounded-2xl shadow-2xl border border-gray-700">
-          <div className="p-8">
-            <div className="text-center mb-8">
-              <h1 className="text-3xl font-bold text-white mb-2">Create New Post</h1>
-              <p className="text-gray-400">Share your thoughts with the K-Forum community</p>
+        <div className="glass-panel p-8 md:p-10 rounded-3xl shadow-2xl backdrop-blur-xl border border-white/5">
+          <div className="text-center mb-10">
+            <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-4 animate-float">
+              Create New Post
+            </h1>
+            <p className="text-gray-400 text-lg">Share your thoughts with the K-Forum community</p>
+          </div>
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Title */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
+                Title
+              </label>
+              <input
+                type="text"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                required
+                maxLength="200"
+                className="w-full bg-white/5 text-white px-6 py-4 rounded-2xl border border-gray-700/50 focus:border-emerald-500/50 focus:bg-white/10 focus:outline-none transition-all placeholder-gray-600 font-medium text-lg"
+                placeholder="Give your post a catchy title..."
+              />
+              <div className="flex justify-end">
+                <span className="text-xs text-gray-500 font-mono">
+                  {formData.title.length}/200
+                </span>
+              </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Title */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Title *
-                </label>
+            {/* Category */}
+            <div className="space-y-3">
+              <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
+                Category
+              </label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                {categories.map((category) => (
+                  <label
+                    key={category.id}
+                    className={`relative flex flex-col items-center justify-center p-4 rounded-2xl border cursor-pointer transition-all duration-300 group overflow-hidden ${formData.category === category.id
+                      ? 'border-emerald-500 bg-emerald-500/10 shadow-[0_0_20px_rgba(16,185,129,0.2)]'
+                      : 'border-white/5 bg-white/5 hover:bg-white/10 hover:border-white/10'
+                      }`}
+                  >
+                    <input
+                      type="radio"
+                      name="category"
+                      value={category.id}
+                      checked={formData.category === category.id}
+                      onChange={handleChange}
+                      className="sr-only"
+                    />
+                    <span className="text-3xl mb-2 group-hover:scale-110 transition-transform duration-300">{category.icon}</span>
+                    <span className={`text-sm font-bold ${formData.category === category.id ? 'text-emerald-400' : 'text-gray-400 group-hover:text-gray-200'}`}>
+                      {category.name}
+                    </span>
+                    {formData.category === category.id && (
+                      <div className="absolute inset-0 bg-gradient-to-tr from-emerald-500/10 to-transparent pointer-events-none" />
+                    )}
+                  </label>
+                ))}
+              </div>
+            </div>
+
+            {/* Content */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
+                Content
+              </label>
+              <textarea
+                name="content"
+                value={formData.content}
+                onChange={handleChange}
+                required
+                maxLength="5000"
+                rows="8"
+                className="w-full bg-white/5 text-white px-6 py-4 rounded-2xl border border-gray-700/50 focus:border-emerald-500/50 focus:bg-white/10 focus:outline-none transition-all resize-none placeholder-gray-600 leading-relaxed"
+                placeholder="What's on your mind? Share your story, confession, or question..."
+              />
+              <div className="flex justify-end">
+                <span className="text-xs text-gray-500 font-mono">
+                  {formData.content.length}/5000
+                </span>
+              </div>
+            </div>
+
+            {/* Tags */}
+            <div className="space-y-2">
+              <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
+                Tags (Optional)
+              </label>
+              <div className="relative group">
+                <Tag className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-500 group-focus-within:text-emerald-500 transition-colors w-5 h-5" />
                 <input
                   type="text"
-                  name="title"
-                  value={formData.title}
+                  name="tags"
+                  value={formData.tags}
                   onChange={handleChange}
-                  required
-                  maxLength="200"
-                  className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none transition-colors"
-                  placeholder="What's your post about?"
+                  className="w-full bg-white/5 text-white pl-14 pr-6 py-4 rounded-2xl border border-gray-700/50 focus:border-emerald-500/50 focus:bg-white/10 focus:outline-none transition-all placeholder-gray-600"
+                  placeholder="academics, events, life (comma separated)"
                 />
-                <p className="text-xs text-gray-400 mt-1">
-                  {formData.title.length}/200 characters
-                </p>
               </div>
+            </div>
 
-              {/* Category */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Category *
-                </label>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                  {categories.map((category) => (
-                    <label
-                      key={category.id}
-                      className={`flex items-center space-x-2 p-3 rounded-lg border cursor-pointer transition-all ${formData.category === category.id
-                        ? 'border-[#17d059] bg-[#17d059]/10 text-[#17d059]'
-                        : 'border-gray-600 hover:border-gray-500 text-gray-300'
-                        }`}
-                    >
-                      <input
-                        type="radio"
-                        name="category"
-                        value={category.id}
-                        checked={formData.category === category.id}
-                        onChange={handleChange}
-                        className="sr-only"
-                      />
-                      <span className="text-lg">{category.icon}</span>
-                      <span className="text-sm font-medium">{category.name}</span>
-                    </label>
-                  ))}
+            {/* Anonymous Toggle */}
+            <div className={`flex items-center justify-between p-6 rounded-2xl border transition-all duration-300 ${formData.isAnonymous
+              ? 'bg-emerald-900/10 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.05)]'
+              : 'bg-white/5 border-white/5'
+              }`}>
+              <div className="flex items-center space-x-4">
+                <div className={`p-3 rounded-xl ${formData.isAnonymous ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-400'}`}>
+                  {formData.isAnonymous ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
+                </div>
+                <div>
+                  <h3 className={`font-bold text-lg ${formData.isAnonymous ? 'text-emerald-400' : 'text-gray-200'}`}>
+                    {formData.isAnonymous ? 'Anonymous Mode' : 'Public Post'}
+                  </h3>
+                  <p className="text-gray-500 text-sm">
+                    {formData.isAnonymous
+                      ? 'Your identity will be completely hidden.'
+                      : 'Your name and profile will be visible.'
+                    }
+                  </p>
                 </div>
               </div>
-
-              {/* Content */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Content *
-                </label>
-                <textarea
-                  name="content"
-                  value={formData.content}
+              <label className="relative inline-flex items-center cursor-pointer">
+                <input
+                  type="checkbox"
+                  name="isAnonymous"
+                  checked={formData.isAnonymous}
                   onChange={handleChange}
-                  required
-                  maxLength="5000"
-                  rows="8"
-                  className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none transition-colors resize-none"
-                  placeholder="Share your thoughts, ask questions, or start a discussion..."
+                  className="sr-only peer"
                 />
-                <p className="text-xs text-gray-400 mt-1">
-                  {formData.content.length}/5000 characters
-                </p>
-              </div>
+                <div className="w-14 h-8 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-emerald-500 peer-checked:to-teal-500 border border-gray-600"></div>
+              </label>
+            </div>
 
-              {/* Tags */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Tags (optional)
-                </label>
-                <div className="relative">
-                  <Tag className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-                  <input
-                    type="text"
-                    name="tags"
-                    value={formData.tags}
-                    onChange={handleChange}
-                    className="w-full bg-gray-700 text-white pl-10 pr-4 py-3 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none transition-colors"
-                    placeholder="programming, web development, internship (separate with commas)"
-                  />
-                </div>
-                <p className="text-xs text-gray-400 mt-1">
-                  Add relevant tags to help others find your post
-                </p>
-              </div>
-
-              {/* Anonymous Toggle */}
-              <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg border border-gray-600">
-                <div className="flex items-center space-x-3">
-                  {formData.isAnonymous ? (
-                    <EyeOff className="w-5 h-5 text-gray-400" />
-                  ) : (
-                    <Eye className="w-5 h-5 text-gray-400" />
-                  )}
-                  <div>
-                    <h3 className="text-white font-medium">Anonymous Post</h3>
-                    <p className="text-gray-400 text-sm">
-                      {formData.isAnonymous
-                        ? 'Your identity will be hidden from other users'
-                        : 'Your name and details will be visible to other users'
-                      }
-                    </p>
+            {/* Image Upload */}
+            <div className="space-y-4">
+              <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
+                Images (Max 5)
+              </label>
+              <div className="space-y-4">
+                <label className="w-full flex flex-col items-center justify-center px-4 py-8 bg-white/5 text-gray-400 rounded-2xl border-2 border-white/10 border-dashed cursor-pointer hover:border-emerald-500/50 hover:bg-white/10 transition-all group">
+                  <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg">
+                    <Image className="w-8 h-8 text-gray-400 group-hover:text-emerald-400 transition-colors" />
                   </div>
-                </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+                  <span className="text-sm font-medium group-hover:text-emerald-300 transition-colors">Click to upload images</span>
+                  <span className="text-xs text-gray-600 mt-1">JPG, PNG up to 10MB</span>
                   <input
-                    type="checkbox"
-                    name="isAnonymous"
-                    checked={formData.isAnonymous}
-                    onChange={handleChange}
-                    className="sr-only peer"
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleImageChange}
+                    className="hidden"
                   />
-                  <div className="w-11 h-6 bg-gray-600 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#17d059]"></div>
                 </label>
-              </div>
 
-              {/* Image Upload */}
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">
-                  Images (optional)
-                </label>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-center w-full">
-                    <label className="w-full flex flex-col items-center justify-center px-4 py-6 bg-gray-700 text-white rounded-lg border-2 border-gray-600 border-dashed cursor-pointer hover:border-[#17d059] transition-colors">
-                      <Image className="w-8 h-8 text-gray-400 mb-2" />
-                      <span className="text-sm text-gray-400">Click to upload images (max 5)</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageChange}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                  {selectedImages.length > 0 && (
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-                      {selectedImages.map((image, index) => (
-                        <div key={index} className="relative group">
-                          <img
-                            src={image.url}
-                            alt={`Preview ${index + 1}`}
-                            className="w-full h-24 object-cover rounded-lg"
-                          />
+                {selectedImages.length > 0 && (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    {selectedImages.map((image, index) => (
+                      <div key={index} className="relative group aspect-square rounded-2xl overflow-hidden glass-card">
+                        <img
+                          src={image.url}
+                          alt={`Preview ${index + 1}`}
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button
                             type="button"
                             onClick={() => removeImage(index)}
-                            className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                            className="bg-red-500/80 hover:bg-red-500 text-white p-2 rounded-full transform scale-0 group-hover:scale-100 transition-all"
                           >
-                            <X className="w-4 h-4" />
+                            <X className="w-5 h-5" />
                           </button>
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
+            </div>
 
-              {/* Submit Button */}
-              <div className="flex items-center justify-between pt-6">
-                <button
-                  type="button"
-                  onClick={() => navigate('/')}
-                  className="px-6 py-3 text-gray-400 hover:text-white transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={loading || !formData.title || !formData.content || !formData.category}
-                  className="bg-gradient-to-r from-[#17d059] to-emerald-600 text-white px-8 py-3 rounded-lg font-semibold hover:from-[#15b84f] hover:to-emerald-700 focus:outline-none focus:ring-4 focus:ring-[#17d059]/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center space-x-2"
-                >
-                  <Send className="w-5 h-5" />
-                  <span>{loading ? 'Publishing...' : 'Publish Post'}</span>
-                </button>
-              </div>
-            </form>
-          </div>
+            {/* Submit Button */}
+            <div className="flex items-center justify-between pt-8 border-t border-gray-700/30">
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="px-8 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={loading || !formData.title || !formData.content || !formData.category}
+                className="relative overflow-hidden bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+              >
+                <span className="relative z-10 flex items-center gap-2">
+                  {loading ? 'Publishing...' : 'Publish Post'}
+                  {!loading && <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
+                </span>
+                <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </button>
+            </div>
+          </form>
         </div>
       </div>
     </div>
