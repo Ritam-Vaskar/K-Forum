@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from '../services/axiosSetup';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PostCard from '../components/Posts/PostCard';
 import TrendingHashtags from '../components/TrendingHashtags';
@@ -8,12 +8,13 @@ import { Search, Filter, Tag, Plus } from 'lucide-react';
 
 const Home = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { user } = useAuth();
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [sortBy, setSortBy] = useState('createdAt');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
@@ -29,6 +30,13 @@ const Home = () => {
     { value: 'clubs', label: '🏛️ Clubs' },
     { value: 'general', label: '💬 General' }
   ];
+
+  useEffect(() => {
+    const query = searchParams.get('search');
+    if (query !== null) {
+      setSearchTerm(query);
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     fetchPosts();

@@ -34,16 +34,16 @@ const TrendingHashtags = ({ onTagClick }) => {
 
     if (loading) {
         return (
-            <div className="bg-gray-800 rounded-xl p-4 border border-gray-700">
-                <div className="flex items-center space-x-2 mb-4">
-                    <TrendingUp className="w-5 h-5 text-[#17d059]" />
-                    <h3 className="text-white font-semibold">Trending</h3>
+            <div className="space-y-4">
+                <div className="flex items-center gap-2 mb-4">
+                    <TrendingUp className="w-5 h-5 text-emerald-400" />
+                    <h3 className="text-white font-bold">Trending Now</h3>
                 </div>
                 <div className="space-y-3">
                     {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="animate-pulse">
-                            <div className="h-4 bg-gray-700 rounded w-3/4 mb-1"></div>
-                            <div className="h-3 bg-gray-700 rounded w-1/2"></div>
+                        <div key={i} className="animate-pulse flex items-center gap-3">
+                            <div className="w-4 h-4 rounded bg-white/10"></div>
+                            <div className="h-4 bg-white/10 rounded w-full"></div>
                         </div>
                     ))}
                 </div>
@@ -60,48 +60,32 @@ const TrendingHashtags = ({ onTagClick }) => {
         { tag: 'events', count: 25 }
     ];
 
-    if (loading) {
-        // ... (loading skeleton matches existing code structure logically, but we are inside the component body so we just proceed)
-        return (
-            <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 shadow-lg sticky top-24">
-                <div className="flex items-center space-x-2 mb-4">
-                    <TrendingUp className="w-5 h-5 text-[#17d059]" />
-                    <h3 className="text-white font-semibold">Trending Now</h3>
-                </div>
-                <div className="space-y-3">
-                    {[1, 2, 3, 4, 5].map((i) => (
-                        <div key={i} className="animate-pulse">
-                            <div className="h-4 bg-gray-700 rounded w-3/4 mb-1"></div>
-                            <div className="h-3 bg-gray-700 rounded w-1/2"></div>
-                        </div>
-                    ))}
-                </div>
-            </div>
-        );
-    }
-
     return (
-        <div className="bg-gray-800 rounded-xl p-4 border border-gray-700 shadow-lg">
-            <div className="flex items-center space-x-2 mb-4">
-                <TrendingUp className="w-5 h-5 text-[#17d059]" />
-                <h3 className="text-white font-semibold">Trending Now</h3>
+        <div className="w-full">
+            <div className="flex items-center gap-2 mb-6">
+                <TrendingUp className="w-5 h-5 text-emerald-400" />
+                <h3 className="text-white font-bold">Trending Now</h3>
             </div>
             <div className="space-y-2">
                 {displayTags.map((item, index) => (
                     <button
                         key={item.tag}
                         onClick={() => onTagClick && onTagClick(item.tag)}
-                        className="w-full text-left p-2 rounded-lg hover:bg-gray-700 transition-colors group"
+                        className="w-full text-left p-3 rounded-xl hover:bg-white/5 transition-all group border border-transparent hover:border-white/5"
                     >
                         <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                                <span className="text-gray-500 text-sm w-4">{index + 1}</span>
-                                <Hash className="w-4 h-4 text-[#17d059]" />
-                                <span className="text-white group-hover:text-[#17d059] transition-colors">
-                                    {item.tag}
-                                </span>
+                            <div className="flex items-center gap-3">
+                                <span className={`text-sm font-mono font-bold w-4 ${index < 3 ? 'text-emerald-400' : 'text-gray-600'}`}>{index + 1}</span>
+                                <div className="flex items-center gap-1">
+                                    <Hash className="w-3.5 h-3.5 text-emerald-500/50 group-hover:text-emerald-400 transition-colors" />
+                                    <span className="text-gray-300 font-medium group-hover:text-white transition-colors">
+                                        {item.tag}
+                                    </span>
+                                </div>
                             </div>
-                            <span className="text-gray-500 text-sm">{item.count} posts</span>
+                            <span className="text-xs font-mono text-gray-600 bg-black/20 px-2 py-1 rounded-lg border border-white/5">
+                                {item.count}
+                            </span>
                         </div>
                     </button>
                 ))}
