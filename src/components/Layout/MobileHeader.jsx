@@ -77,9 +77,13 @@ const MobileHeader = () => {
                                     }
                                 `}
                             >
-                                <item.icon className="w-6 h-6" strokeWidth={2.5} />
-                                <span className="font-bold text-lg">{item.label}</span>
-                                {isActive && <Sparkles className="w-4 h-4 ml-auto text-emerald-400 animate-pulse" />}
+                                {({ isActive }) => (
+                                    <>
+                                        <item.icon className="w-6 h-6" strokeWidth={2.5} />
+                                        <span className="font-bold text-lg">{item.label}</span>
+                                        {isActive && <Sparkles className="w-4 h-4 ml-auto text-emerald-400 animate-pulse" />}
+                                    </>
+                                )}
                             </NavLink>
                         ))}
                     </nav>
