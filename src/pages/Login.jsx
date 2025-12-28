@@ -92,10 +92,18 @@ const Login = () => {
     toast.success('Demo credentials filled!');
   };
 
+  const handleAdminDemoLogin = () => {
+    setFormData({
+      email: 'admin@kiit.ac.in',
+      password: 'adminpassword'
+    });
+    toast.success('Admin demo credentials filled!');
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-white/10">
           {step === 'login' ? (
             <>
               <div className="text-center mb-8">
@@ -151,13 +159,20 @@ const Login = () => {
                   {loading ? 'Signing In...' : 'Sign In'}
                 </button>
 
-                <div className="text-center">
+                <div className="flex justify-between space-x-2">
                   <button
                     type="button"
                     onClick={handleDemoLogin}
-                    className="text-sm text-gray-500 hover:text-gray-300 transition-colors"
+                    className="flex-1 text-xs text-gray-400 hover:text-white border border-gray-600 hover:border-gray-400 rounded px-2 py-1 transition-colors"
                   >
-                    Fill Demo Credentials
+                    Student Demo
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleAdminDemoLogin}
+                    className="flex-1 text-xs text-[#17d059] hover:text-emerald-400 border border-[#17d059]/50 hover:border-[#17d059] rounded px-2 py-1 transition-colors"
+                  >
+                    Admin Demo
                   </button>
                 </div>
               </form>

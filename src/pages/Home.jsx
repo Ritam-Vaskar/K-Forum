@@ -4,7 +4,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PostCard from '../components/Posts/PostCard';
 import TrendingHashtags from '../components/TrendingHashtags';
-import { Search, Filter, Tag, Plus } from 'lucide-react';
+import { Search, Filter, Tag, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 
 const Home = () => {
   const navigate = useNavigate();
@@ -18,17 +18,19 @@ const Home = () => {
   const [sortBy, setSortBy] = useState('createdAt');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   // Categories (must match Post model enum)
   const categories = [
     { value: 'all', label: 'All Categories' },
     { value: 'academics', label: '📚 Academics' },
     { value: 'events', label: '🎉 Events' },
-    { value: 'rants', label: '😤 Rants' },
+    { value: 'Confessions', label: '🥹 Confessions' },
     { value: 'internships', label: '💼 Internships' },
     { value: 'lost-found', label: '🔍 Lost & Found' },
     { value: 'clubs', label: '🏛️ Clubs' },
-    { value: 'general', label: '💬 General' }
+    { value: 'general', label: '💬 General' },
+    { value: 'Bookies', label: '🤖 Bookies' }
   ];
 
   useEffect(() => {
@@ -111,10 +113,10 @@ const Home = () => {
       <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
         <div>
           <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-500 mb-2 tracking-tight">
-            {activeTab === 'confessions' ? 'Secret Confessions' : 'Campus Friends'}
+            {activeTab === 'confessions' ? 'K-Forum' : 'Bookies'}
           </h1>
           <p className="text-gray-400 text-lg">
-            {activeTab === 'confessions' ? 'What happens at KIIT, stays on K-Forum.' : 'Connect with your batchmates anonymously.'}
+            {activeTab === 'confessions' ? 'Nobody Does it Better !!' : 'Doubts ? just post it !!'}
           </p>
         </div>
 
@@ -127,13 +129,13 @@ const Home = () => {
             onClick={() => setActiveTab('confessions')}
             className={`relative z-10 px-8 py-3 rounded-xl text-sm font-bold transition-colors duration-300 ${activeTab === 'confessions' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
           >
-            CONFESSIONS
+            POSTS
           </button>
           <button
             onClick={() => setActiveTab('friends')}
             className={`relative z-10 px-8 py-3 rounded-xl text-sm font-bold transition-colors duration-300 ${activeTab === 'friends' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
           >
-            FRIENDS
+            BOOKIES
           </button>
         </div>
       </div>
@@ -144,28 +146,49 @@ const Home = () => {
         {/* Left Column: Filters (Sticky) */}
         <div className="hidden lg:block lg:col-span-3">
           <div className="sticky top-24 space-y-6">
-            <div className="glass-panel rounded-3xl p-6">
-              <h3 className="font-bold text-white mb-6 flex items-center gap-2">
-                <Filter className="w-5 h-5 text-emerald-400" />
-                Filters
-              </h3>
-              <div className="space-y-2">
-                <button
-                  onClick={() => setSelectedCategory('all')}
-                  className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedCategory === 'all' ? 'bg-white/10 text-emerald-400 border-l-2 border-emerald-500' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-                >
-                  All Posts
-                </button>
-                {categories.filter(c => c.value !== 'all').map(cat => (
+            <div className="glass-panel rounded-3xl p-1 transition-all duration-300">
+              <button
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+                className="w-full flex items-center justify-between p-5 text-white bg-transparent hover:bg-white/5 rounded-2xl transition-all"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-emerald-500/10 rounded-lg">
+                    <Filter className="w-5 h-5 text-emerald-400" />
+                  </div>
+                  <div className="text-left">
+                    <h3 className="font-bold text-sm">Filters</h3>
+                    <p className="text-xs text-gray-400">{categories.find(c => c.value === selectedCategory)?.label}</p>
+                  </div>
+                </div>
+                {isFilterOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+              </button>
+
+              {isFilterOpen && (
+                <div className="px-3 pb-3 space-y-1 animate-fade-in-down">
+                  <div className="h-px bg-white/10 mx-2 mb-3" />
                   <button
-                    key={cat.value}
-                    onClick={() => setSelectedCategory(cat.value)}
-                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedCategory === cat.value ? 'bg-white/10 text-emerald-400 border-l-2 border-emerald-500' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                    onClick={() => {
+                      setSelectedCategory('all');
+                      setIsFilterOpen(false);
+                    }}
+                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedCategory === 'all' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
                   >
-                    {cat.label}
+                    All Posts
                   </button>
-                ))}
-              </div>
+                  {categories.filter(c => c.value !== 'all').map(cat => (
+                    <button
+                      key={cat.value}
+                      onClick={() => {
+                        setSelectedCategory(cat.value);
+                        setIsFilterOpen(false);
+                      }}
+                      className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedCategory === cat.value ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -193,7 +216,7 @@ const Home = () => {
               <Search className="text-gray-500 w-5 h-5 ml-4" />
               <input
                 type="text"
-                placeholder="Search for secrets..."
+                placeholder="Search..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full bg-transparent text-white px-4 py-3 focus:outline-none placeholder-gray-600"
@@ -250,8 +273,8 @@ const Home = () => {
               <div className="w-24 h-24 bg-gray-800/50 rounded-full flex items-center justify-center mx-auto mb-6">
                 <Search className="w-10 h-10 text-gray-600" />
               </div>
-              <h3 className="text-2xl font-bold text-white mb-2">No confessions found</h3>
-              <p className="text-gray-400">Be the first to share a secret here.</p>
+              <h3 className="text-2xl font-bold text-white mb-2">No posts found</h3>
+              <p className="text-gray-400">Be the first to share something here.</p>
             </div>
           )}
         </div>

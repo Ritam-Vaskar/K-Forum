@@ -92,7 +92,7 @@ const Register = () => {
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center px-4">
       <div className="max-w-md w-full">
-        <div className="bg-gray-800 rounded-2xl shadow-2xl p-8 border border-gray-700">
+        <div className="bg-white/5 backdrop-blur-xl rounded-2xl shadow-2xl p-8 border border-white/10">
           {step === 1 ? (
             <>
               <div className="text-center mb-8">

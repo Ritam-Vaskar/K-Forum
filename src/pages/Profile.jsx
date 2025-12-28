@@ -1,14 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import PostCard from '../components/Posts/PostCard';
-import { User, Mail, GraduationCap, Calendar, Trophy, MessageCircle, ThumbsUp, Edit3, Camera, Flame, Target, Gamepad2 } from 'lucide-react';
+import { User, Mail, GraduationCap, Calendar, Trophy, MessageCircle, ThumbsUp, Edit3, Camera, Flame, Target, Gamepad2, LogOut } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
   const { id: urlId } = useParams();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser, logout } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -105,6 +106,12 @@ const Profile = () => {
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    toast.success('Logged out successfully');
+    navigate('/login');
+  };
+
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
@@ -131,7 +138,7 @@ const Profile = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-700 sticky top-24">
+            <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-6 shadow-lg border border-white/10 sticky top-24">
               <div className="text-center mb-6">
                 <div className="relative w-24 h-24 mx-auto mb-4">
                   <div className="w-24 h-24 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center overflow-hidden">
@@ -256,15 +263,15 @@ const Profile = () => {
 
                 {/* Fire Streak Display */}
                 <div className={`relative p-4 rounded-xl mb-4 ${wordleStreak.current > 0
-                    ? 'bg-gradient-to-r from-orange-500/20 via-red-500/20 to-orange-500/20 border border-orange-500/30'
-                    : 'bg-gray-700/50 border border-gray-600'
+                  ? 'bg-gradient-to-r from-orange-500/20 via-red-500/20 to-orange-500/20 border border-orange-500/30'
+                  : 'bg-gray-700/50 border border-gray-600'
                   }`}>
                   <div className="flex items-center justify-center gap-3">
                     <div className={`relative ${wordleStreak.current > 0 ? 'animate-pulse' : ''}`}>
                       <Flame
                         className={`w-12 h-12 ${wordleStreak.current > 0
-                            ? 'text-orange-400 drop-shadow-lg'
-                            : 'text-gray-500'
+                          ? 'text-orange-400 drop-shadow-lg'
+                          : 'text-gray-500'
                           }`}
                         style={{
                           filter: wordleStreak.current > 0
@@ -283,8 +290,8 @@ const Profile = () => {
                     </div>
                     <div className="text-center">
                       <p className={`text-4xl font-bold ${wordleStreak.current > 0
-                          ? 'text-orange-400'
-                          : 'text-gray-400'
+                        ? 'text-orange-400'
+                        : 'text-gray-400'
                         }`}>
                         {wordleStreak.current}
                       </p>
@@ -359,6 +366,19 @@ const Profile = () => {
                   </div>
                 </div>
               )}
+
+              {/* Logout Button */}
+              {isOwnProfile && (
+                <div className="mt-6 pt-6 border-t border-gray-700">
+                  <button
+                    onClick={handleLogout}
+                    className="w-full flex items-center justify-center space-x-2 bg-red-500/10 text-red-500 py-3 rounded-xl hover:bg-red-500/20 transition-all duration-200 border border-red-500/20 font-semibold group"
+                  >
+                    <LogOut className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+                    <span>Log Out</span>
+                  </button>
+                </div>
+              )}
             </div>
           </div>
 
@@ -374,7 +394,7 @@ const Profile = () => {
             </div>
 
             {posts.length === 0 ? (
-              <div className="bg-gray-800 rounded-lg p-8 text-center border border-gray-700">
+              <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 text-center border border-white/10">
                 <MessageCircle className="w-12 h-12 text-gray-600 mx-auto mb-4" />
                 <h3 className="text-xl font-semibold text-white mb-2">No posts yet</h3>
                 <p className="text-gray-400">
