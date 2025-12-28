@@ -6,13 +6,20 @@ import { auth, isAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
-// Get dashboard stats
+// ============================================
+// DASHBOARD STATS
+// ============================================
 router.get('/stats', auth, isAdmin, async (req, res) => {
   try {
     const totalUsers = await User.countDocuments();
     const totalPosts = await Post.countDocuments();
     const totalComments = await Comment.countDocuments();
     const pendingReports = await Post.countDocuments({ 'reports.0': { $exists: true } });
+
+    // NEW: Count pending review posts
+    const pendingReview = await Post.countDocuments({ status: 'PENDING_REVIEW' });
+    const publishedPosts = await Post.countDocuments({ status: 'PUBLISHED' });
+    const rejectedPosts = await Post.countDocuments({ status: 'REJECTED' });
 
     const categoryStats = await Post.aggregate([
       { $group: { _id: '$category', count: { $sum: 1 } } }
@@ -23,6 +30,9 @@ router.get('/stats', auth, isAdmin, async (req, res) => {
       totalPosts,
       totalComments,
       pendingReports,
+      pendingReview,
+      publishedPosts,
+      rejectedPosts,
       categoryStats
     });
   } catch (error) {
@@ -31,7 +41,105 @@ router.get('/stats', auth, isAdmin, async (req, res) => {
   }
 });
 
-// Get reported posts
+// ============================================
+// GET PENDING REVIEW POSTS (for admin moderation)
+// ============================================
+router.get('/posts/pending', auth, isAdmin, async (req, res) => {
+  try {
+    const posts = await Post.find({ status: 'PENDING_REVIEW' })
+      .populate('author', 'name studentId email')
+      .sort({ createdAt: -1 })
+      .lean();
+
+    // Add formatted data for admin UI
+    const formattedPosts = posts.map(post => ({
+      ...post,
+      moderationInfo: {
+        confidence: post.moderation?.confidence || 0,
+        confidencePercent: Math.round((post.moderation?.confidence || 0) * 100),
+        categories: post.moderation?.categories || [],
+        flaggedWords: post.moderation?.flaggedWords || [],
+        language: post.moderation?.language || 'unknown'
+      }
+    }));
+
+    res.json(formattedPosts);
+  } catch (error) {
+    console.error('Get pending posts error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ============================================
+// APPROVE POST (Admin action)
+// ============================================
+router.post('/posts/:id/approve', auth, isAdmin, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    post.status = 'PUBLISHED';
+    post.moderationStatus = 'approved';
+    post.adminDecision = {
+      decision: 'APPROVED',
+      adminId: req.userId,
+      reviewedAt: new Date(),
+      reason: req.body.reason || 'Approved by admin'
+    };
+
+    await post.save();
+
+    res.json({
+      message: 'Post approved and published successfully',
+      post
+    });
+  } catch (error) {
+    console.error('Approve post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ============================================
+// REJECT POST (Admin action)
+// ============================================
+router.post('/posts/:id/reject', auth, isAdmin, async (req, res) => {
+  try {
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    post.status = 'REJECTED';
+    post.moderationStatus = 'removed';
+    post.adminDecision = {
+      decision: 'REJECTED',
+      adminId: req.userId,
+      reviewedAt: new Date(),
+      reason: req.body.reason || 'Rejected by admin'
+    };
+
+    await post.save();
+
+    // Optionally: Send notification to user
+    // await notifyUser(post.author, 'Your post has been rejected');
+
+    res.json({
+      message: 'Post rejected successfully',
+      post
+    });
+  } catch (error) {
+    console.error('Reject post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ============================================
+// GET REPORTED POSTS (user reports)
+// ============================================
 router.get('/reported-posts', auth, isAdmin, async (req, res) => {
   try {
     const posts = await Post.find({ 'reports.0': { $exists: true } })
@@ -46,10 +154,17 @@ router.get('/reported-posts', auth, isAdmin, async (req, res) => {
   }
 });
 
-// Get AI-flagged posts (for moderation)
+// ============================================
+// GET FLAGGED POSTS (legacy endpoint)
+// ============================================
 router.get('/flagged-posts', auth, isAdmin, async (req, res) => {
   try {
-    const posts = await Post.find({ moderationStatus: 'flagged' })
+    const posts = await Post.find({
+      $or: [
+        { moderationStatus: 'flagged' },
+        { status: 'PENDING_REVIEW' }
+      ]
+    })
       .populate('author', 'name studentId')
       .sort({ createdAt: -1 });
 
@@ -60,20 +175,59 @@ router.get('/flagged-posts', auth, isAdmin, async (req, res) => {
   }
 });
 
-// Moderate post
+// ============================================
+// MODERATE POST (legacy endpoint, kept for compatibility)
+// ============================================
 router.post('/moderate-post/:id', auth, isAdmin, async (req, res) => {
   try {
     const { action } = req.body; // 'approve', 'flag', 'remove'
 
+    const updateData = {
+      moderationStatus: action === 'approve' ? 'approved' : action
+    };
+
+    // Map to new status field
+    if (action === 'approve') {
+      updateData.status = 'PUBLISHED';
+      updateData.adminDecision = {
+        decision: 'APPROVED',
+        adminId: req.userId,
+        reviewedAt: new Date()
+      };
+    } else if (action === 'remove') {
+      updateData.status = 'REJECTED';
+      updateData.adminDecision = {
+        decision: 'REJECTED',
+        adminId: req.userId,
+        reviewedAt: new Date()
+      };
+    }
+
     const post = await Post.findByIdAndUpdate(
       req.params.id,
-      { moderationStatus: action === 'approve' ? 'approved' : action },
+      updateData,
       { new: true }
     );
 
     res.json({ message: `Post ${action}d successfully`, post });
   } catch (error) {
     console.error('Moderate post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// ============================================
+// GET ALL USERS (for admin management)
+// ============================================
+router.get('/users', auth, isAdmin, async (req, res) => {
+  try {
+    const users = await User.find()
+      .select('-password')
+      .sort({ createdAt: -1 });
+
+    res.json(users);
+  } catch (error) {
+    console.error('Get users error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

@@ -93,6 +93,50 @@ const postSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+
+  // --- NEW: Enhanced Moderation System ---
+  status: {
+    type: String,
+    enum: ['PUBLISHED', 'PENDING_REVIEW', 'REJECTED'],
+    default: 'PENDING_REVIEW',
+    index: true
+  },
+
+  moderation: {
+    isUnsafe: {
+      type: Boolean,
+      default: false
+    },
+    confidence: {
+      type: Number,
+      default: 0
+    },
+    categories: [{
+      type: String
+    }],
+    flaggedWords: [{
+      type: String
+    }],
+    language: {
+      type: String,
+      default: 'unknown'
+    }
+  },
+
+  adminDecision: {
+    decision: {
+      type: String,
+      enum: ['APPROVED', 'REJECTED']
+    },
+    adminId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    reviewedAt: Date,
+    reason: String
+  },
+
+  // Keep old field for backward compatibility
   moderationStatus: {
     type: String,
     enum: ['pending', 'approved', 'flagged', 'removed'],

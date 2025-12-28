@@ -99,16 +99,28 @@ const CreatePost = () => {
         '/api/posts',
         formDataToSend
       );
-      toast.success('Post created successfully!');
-      navigate(`/post/${response.data._id}`);
+
+      // Handle different moderation statuses
+      if (response.data.moderationStatus === 'PENDING_REVIEW') {
+        toast.success('Your post has been submitted for review. It will be visible once approved by an admin.');
+        navigate('/');
+      } else {
+        toast.success('Post created successfully!');
+        navigate(`/post/${response.data.post._id}`);
+      }
     } catch (error) {
       console.error('Error creating post:', error);
-      if (error.response?.data?.errors) {
+      if (error.response?.data?.reason) {
+        // Handle moderation rejection
+        toast.error(`Post rejected: ${error.response.data.reason}`);
+      } else if (error.response?.data?.errors) {
         // Handle validation errors from server
         const errors = error.response.data.errors;
         Object.values(errors).forEach(error => {
           toast.error(error);
         });
+      } else if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
       } else if (error.message) {
         // Handle client-side validation errors
         toast.error(error.message);

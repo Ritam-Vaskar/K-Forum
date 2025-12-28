@@ -4,7 +4,7 @@ import Comment from '../models/Comment.js';
 import { auth } from '../middleware/auth.js';
 import { uploadImage } from '../config/cloudinary.js';
 import multer from 'multer';
-import { moderateContent } from '../services/aiModeration.js';
+import { moderateText } from '../services/aiModeration.js';
 
 // Configure multer for memory storage
 const storage = multer.memoryStorage();
@@ -30,14 +30,16 @@ router.get('/trending/hashtags', async (req, res) => {
   try {
     const { limit = 10 } = req.query;
 
-    // Aggregate to find most used tags in the last 7 days
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
     const trendingTags = await Post.aggregate([
       {
         $match: {
           createdAt: { $gte: sevenDaysAgo },
-          moderationStatus: 'approved'
+          $or: [
+            { status: 'PUBLISHED' },
+            { status: { $exists: false }, moderationStatus: 'approved' }
+          ]
         }
       },
       { $unwind: '$tags' },
@@ -65,7 +67,7 @@ router.get('/trending/hashtags', async (req, res) => {
   }
 });
 
-// Get all posts with pagination and filtering
+// Get all posts (only PUBLISHED)
 router.get('/', async (req, res) => {
   try {
     const {
@@ -78,24 +80,26 @@ router.get('/', async (req, res) => {
       sortOrder = 'desc'
     } = req.query;
 
-    let query = { moderationStatus: 'approved' }; // Only show approved posts publicly
-
-    console.log('Search Params:', { category, search, tag });
+    // Include both old posts (moderationStatus=approved) and new posts (status=PUBLISHED)
+    let query = {
+      $or: [
+        { status: 'PUBLISHED' },
+        { status: { $exists: false }, moderationStatus: 'approved' }
+      ]
+    };
 
     if (category && category !== 'all') {
       query.category = category;
     }
 
     if (tag) {
-      console.log('Filtering by tag:', tag);
       query.tags = tag.toLowerCase();
     } else if (search) {
-      console.log('Text search:', search);
       query.$text = { $search: search };
     }
 
     const posts = await Post.find(query)
-      .populate('author', 'name studentId year branch')
+      .populate('author', 'name studentId year branch avatar')
       .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
       .limit(limit * 1)
       .skip((page - 1) * limit)
@@ -103,12 +107,11 @@ router.get('/', async (req, res) => {
 
     const total = await Post.countDocuments(query);
 
-    // Hide author info for anonymous posts
     const processedPosts = posts.map(post => ({
       ...post,
       author: post.isAnonymous ? null : post.author,
-      upvoteCount: post.upvotes.length,
-      downvoteCount: post.downvotes.length
+      upvoteCount: post.upvotes?.length || 0,
+      downvoteCount: post.downvotes?.length || 0
     }));
 
     res.json({
@@ -127,7 +130,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const post = await Post.findById(req.params.id)
-      .populate('author', 'name studentId year branch');
+      .populate('author', 'name studentId year branch avatar');
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
@@ -137,12 +140,11 @@ router.get('/:id', async (req, res) => {
     post.viewCount += 1;
     await post.save();
 
-    // Hide author info for anonymous posts
     const processedPost = {
       ...post.toObject(),
       author: post.isAnonymous ? null : post.author,
-      upvoteCount: post.upvotes.length,
-      downvoteCount: post.downvotes.length
+      upvoteCount: post.upvotes?.length || 0,
+      downvoteCount: post.downvotes?.length || 0
     };
 
     res.json(processedPost);
@@ -152,29 +154,26 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-// Create post
+// ============================================
+// CREATE POST - With AI Moderation
+// ============================================
 router.post('/', auth, upload.array('images', 5), async (req, res) => {
   try {
     const { title, content, category, tags, isAnonymous } = req.body;
 
-    // AI Content Moderation
+    // --- AI MODERATION ---
     const textToAnalyze = `${title}\n${content}`;
-    console.log('Analyzing text for toxicity...');
-    const moderationResult = await moderateContent(textToAnalyze);
+    console.log('Analyzing content for moderation...');
 
-    console.log("Moderation Result:", moderationResult);
+    const moderationResult = await moderateText(textToAnalyze);
+    console.log('Moderation Result:', moderationResult);
 
-    if (moderationResult.status === 'REJECTED') {
-      return res.status(400).json({
-        message: 'Post rejected due to content policy violations.',
-        reason: moderationResult.reason,
-        details: moderationResult // Optional: send back details for debugging/feedback
-      });
-    }
+    // Determine status based on moderation
+    // SAFE (confidence < 0.45) → PUBLISHED
+    // UNSAFE (confidence >= 0.45) → PENDING_REVIEW (admin will decide)
+    const status = moderationResult.isUnsafe ? 'PENDING_REVIEW' : 'PUBLISHED';
 
-    const initialStatus = moderationResult.status === 'FLAGGED' ? 'flagged' : 'approved';
-
-    // Extract hashtags from content (Twitter-style)
+    // Extract hashtags from content
     const hashtagRegex = /#(\w+)/g;
     const extractedHashtags = [];
     let match;
@@ -182,12 +181,11 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
       extractedHashtags.push(match[1].toLowerCase());
     }
 
-    // Handle image uploads if present (OPTIONAL - failures won't block post)
+    // Handle image uploads
     const attachments = [];
     if (req.files && req.files.length > 0) {
       for (const file of req.files) {
         try {
-          // Convert buffer to base64
           const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
           const imageUrl = await uploadImage(base64Image);
           attachments.push({
@@ -197,21 +195,18 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
           });
         } catch (error) {
           console.warn('Image upload failed (skipping):', error.message);
-          // Continue without this image - don't block the post
         }
       }
     }
 
-    // Clean and validate attachments data
     const cleanAttachments = attachments.map(attachment => ({
       url: attachment.url.trim(),
       type: attachment.type,
       filename: attachment.filename
     }));
 
-    // Combine manual tags with extracted hashtags
     const manualTags = tags ? tags.split(',').map(tag => tag.trim().toLowerCase()).filter(Boolean) : [];
-    const allTags = [...new Set([...manualTags, ...extractedHashtags])]; // Dedupe
+    const allTags = [...new Set([...manualTags, ...extractedHashtags])];
 
     const post = new Post({
       title: title.trim(),
@@ -221,11 +216,23 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
       tags: allTags,
       isAnonymous: isAnonymous === 'true',
       attachments: cleanAttachments,
-      moderationStatus: initialStatus // Apply AI decision
+
+      // New moderation fields
+      status,
+      moderation: {
+        isUnsafe: moderationResult.isUnsafe,
+        confidence: moderationResult.confidence,
+        categories: moderationResult.categories || [],
+        flaggedWords: moderationResult.flaggedWords || [],
+        language: moderationResult.language || 'unknown'
+      },
+
+      // Keep old field for backward compatibility
+      moderationStatus: status === 'PUBLISHED' ? 'approved' : 'flagged'
     });
 
     await post.save();
-    await post.populate('author', 'name studentId year branch');
+    await post.populate('author', 'name studentId year branch avatar');
 
     const processedPost = {
       ...post.toObject(),
@@ -234,7 +241,15 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
       downvoteCount: 0
     };
 
-    res.status(201).json(processedPost);
+    // Return appropriate message
+    res.status(201).json({
+      message: status === 'PUBLISHED'
+        ? 'Post published successfully!'
+        : 'Post submitted for admin review. It will be visible once approved.',
+      post: processedPost,
+      moderationStatus: status
+    });
+
   } catch (error) {
     console.error('Create post error:', error);
     if (error.name === 'ValidationError') {
@@ -260,18 +275,16 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
 // Vote on post
 router.post('/:id/vote', auth, async (req, res) => {
   try {
-    const { voteType } = req.body; // 'up' or 'down'
+    const { voteType } = req.body;
     const post = await Post.findById(req.params.id);
 
     if (!post) {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    // Remove existing votes
     post.upvotes = post.upvotes.filter(vote => !vote.user.equals(req.userId));
     post.downvotes = post.downvotes.filter(vote => !vote.user.equals(req.userId));
 
-    // Add new vote
     if (voteType === 'up') {
       post.upvotes.push({ user: req.userId });
     } else if (voteType === 'down') {
@@ -297,14 +310,14 @@ router.get('/:id/comments', async (req, res) => {
       post: req.params.id,
       moderationStatus: 'approved'
     })
-      .populate('author', 'name studentId year branch')
+      .populate('author', 'name studentId year branch avatar')
       .sort({ createdAt: -1 });
 
     const processedComments = comments.map(comment => ({
       ...comment.toObject(),
       author: comment.isAnonymous ? null : comment.author,
-      upvoteCount: comment.upvotes.length,
-      downvoteCount: comment.downvotes.length
+      upvoteCount: comment.upvotes?.length || 0,
+      downvoteCount: comment.downvotes?.length || 0
     }));
 
     res.json(processedComments);
@@ -328,9 +341,8 @@ router.post('/:id/comments', auth, async (req, res) => {
     });
 
     await comment.save();
-    await comment.populate('author', 'name studentId year branch');
+    await comment.populate('author', 'name studentId year branch avatar');
 
-    // Update post comment count
     await Post.findByIdAndUpdate(req.params.id, {
       $inc: { commentCount: 1 }
     });
@@ -358,15 +370,11 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    // Check if user is the author or an admin
     if (!post.author.equals(req.userId) && req.userRole !== 'admin') {
       return res.status(403).json({ message: 'Not authorized to delete this post' });
     }
 
-    // Delete all comments associated with the post
     await Comment.deleteMany({ post: req.params.id });
-
-    // Delete the post
     await post.deleteOne();
 
     res.json({ message: 'Post deleted successfully' });
@@ -386,20 +394,18 @@ router.post('/:id/report', auth, async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    // Check if user has already reported this post
     const existingReport = post.reports.find(report => report.user.equals(req.userId));
     if (existingReport) {
       return res.status(400).json({ message: 'You have already reported this post' });
     }
 
-    // Add report
     post.reports.push({
       user: req.userId,
       reason
     });
 
-    // Update moderation status if report count exceeds threshold
-    if (post.reports.length >= 5 && post.moderationStatus === 'approved') {
+    if (post.reports.length >= 5 && post.status === 'PUBLISHED') {
+      post.status = 'PENDING_REVIEW';
       post.moderationStatus = 'flagged';
     }
 
