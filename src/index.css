@@ -2,6 +2,15 @@
 @tailwind components;
 @tailwind utilities;
 
+html,
+body {
+  overflow-x: hidden;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: #0f172a;
+}
+
 /* Premium Glassmorphism */
 .glass-panel {
   background: rgba(15, 23, 42, 0.6);
