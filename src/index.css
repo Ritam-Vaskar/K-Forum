@@ -206,3 +206,44 @@
     background-position: 0% 50%;
   }
 }
+
+/* Golden Shine Animation for Events */
+@keyframes shine {
+  0% {
+    left: -100%;
+    opacity: 0;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+
+  100% {
+    left: 200%;
+    opacity: 0;
+  }
+}
+
+.golden-shine {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 215, 0, 0.3);
+  box-shadow: 0 0 15px rgba(255, 215, 0, 0.1) !important;
+}
+
+.golden-shine::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 50%;
+  height: 100%;
+  background: linear-gradient(to right,
+      transparent,
+      rgba(255, 215, 0, 0.4),
+      transparent);
+  transform: skewX(-25deg);
+  animation: shine 3s infinite;
+  pointer-events: none;
+  z-index: 10;
+}

@@ -5,6 +5,7 @@ import axios from 'axios';
 import toast from 'react-hot-toast';
 import { ArrowUp, ArrowDown, MessageCircle, Eye, Clock, User, MoreVertical, Flag, Trash2 } from 'lucide-react';
 import ImageViewer from '../ImageViewer';
+import confetti from 'canvas-confetti';
 
 const PostCard = ({ post, onDelete }) => {
   const { user } = useAuth();
@@ -80,8 +81,36 @@ const PostCard = ({ post, onDelete }) => {
     }
   };
 
+
+  const handleInteraction = (e) => {
+    // Only trigger if it's an events post
+    if (post.category === 'events') {
+      // We don't want to trigger this if clicking buttons/links
+      if (e.target.closest('button') || e.target.closest('a')) {
+        return;
+      }
+
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = (rect.left + rect.width / 2) / window.innerWidth;
+      const y = (rect.top + rect.height / 2) / window.innerHeight;
+
+      confetti({
+        particleCount: 150,
+        spread: 100,
+        origin: { x, y },
+        colors: ['#FFD700', '#FFA500', '#ffffff', '#FF4500'],
+        gravity: 0.8,
+        scalar: 1.2,
+        ticks: 200
+      });
+    }
+  };
+
   return (
-    <div className="glass-card rounded-2xl p-6 mb-6 hover:bg-white/5 transition-all duration-300 relative group border border-gray-700/30">
+    <div
+      onClick={handleInteraction}
+      className={`glass-card rounded-2xl p-6 mb-6 hover:bg-white/5 transition-all duration-300 relative group border border-gray-700/30 ${post.category === 'events' ? 'golden-shine' : ''}`}
+    >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center justify-between w-full">
           <div className="flex items-center space-x-3">
