@@ -13,13 +13,28 @@ const Home = () => {
 
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
   const [sortBy, setSortBy] = useState('createdAt');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState('confessions'); // confessions | friends
+  // Initialize state with strict validation
+  const [activeTab, setActiveTab] = useState(() => {
+    const saved = localStorage.getItem('activeTab');
+    return (saved === 'friends' || saved === 'confessions') ? saved : 'confessions';
+  });
+
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    const savedTab = localStorage.getItem('activeTab');
+    return savedTab === 'friends' ? 'Bookies' : 'all';
+  });
+
+  // Keep state active in local storage
+  useEffect(() => {
+    if (activeTab) {
+      localStorage.setItem('activeTab', activeTab);
+    }
+  }, [activeTab]);
 
   // Categories (must match Post model enum)
   const categories = [
@@ -124,57 +139,68 @@ const Home = () => {
         <Plus className="w-8 h-8" />
       </button>
 
-      {/* Inline Header: Search Bar + Filter + Sort + Switch */}
-      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 mb-6">
-        {/* Search Bar (Left) with Inline Sort */}
-        <div className="relative flex-1 group">
+      {/* Top Header Area */}
+      <div className="flex flex-row items-center gap-6 mb-8 mt-4">
+        {/* Search & Sort Bar */}
+        <div className="flex-1 relative group">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-500" />
-          <div className="relative bg-[#1a1f2e]/60 backdrop-blur-xl rounded-2xl p-1.5 flex items-center border border-white/5">
-            <Search className="text-gray-500 w-4 h-4 ml-3" />
+          <div className="relative bg-[#0f1115] border border-white/5 rounded-2xl flex items-center p-2 shadow-xl">
+            <Search className="text-gray-500 w-5 h-5 ml-4" />
             <input
               type="text"
               placeholder={activeTab === 'confessions' ? "Search posts..." : "Search bookies..."}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-transparent text-white px-3 py-2 text-sm focus:outline-none placeholder-gray-600"
+              className="w-full bg-transparent text-white px-4 py-2.5 text-sm focus:outline-none placeholder-gray-600 font-medium"
             />
-            {/* Sort Select Integrated into Search Bar */}
+
+            {/* Divider */}
+            <div className="w-px h-8 bg-white/10 mx-2" />
+
+            {/* Sort Dropdown */}
             <select
               value={sortBy}
               onChange={(e) => handleSortChange(e.target.value)}
-              className="bg-white/5 text-gray-300 text-xs font-bold rounded-xl px-3 py-2 border-none outline-none cursor-pointer hover:bg-white/10 transition-all ml-2 whitespace-nowrap"
+              className="bg-transparent text-gray-400 text-xs font-bold px-4 py-2 outline-none cursor-pointer hover:text-white transition-colors appearance-none"
             >
               <option value="createdAt">Newest</option>
               <option value="upvotes">Top</option>
               <option value="commentCount">Hot</option>
             </select>
+            <ChevronDown className="w-4 h-4 text-gray-500 mr-4 pointer-events-none" />
           </div>
         </div>
 
-        {/* Switch Toggle (Right) - Enlarged */}
-        <div className="glass-panel p-1 rounded-2xl flex relative shrink-0 h-[52px] min-w-[220px]">
+        {/* Rebuilt Toggle Switch - Fixed Width Container */}
+        <div className="bg-[#0f1115] border border-white/10 p-1 rounded-xl flex items-center shadow-2xl relative shrink-0 h-[50px] w-[260px]">
+          {/* Sliding Indicator Background */}
           <div
-            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl transition-all duration-500 ease-out shadow-lg shadow-emerald-500/20 ${activeTab === 'friends' ? 'translate-x-full left-0' : 'left-1'}`}
+            className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-lg shadow-lg shadow-emerald-500/20 transition-all duration-300 ease-out ${activeTab === 'friends' ? 'translate-x-[100%] left-1' : 'left-1'
+              }`}
           />
+
           <button
             onClick={() => {
               setActiveTab('confessions');
               setSelectedCategory('all');
               setPage(1);
             }}
-            className={`relative z-10 flex-1 px-4 py-2 rounded-xl text-xs font-bold tracking-wider transition-colors duration-300 ${activeTab === 'confessions' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+            className={`relative z-10 flex-1 h-full rounded-lg text-xs font-bold uppercase tracking-widest transition-colors duration-300 flex items-center justify-center ${activeTab === 'confessions' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
           >
-            POSTS
+            Posts
           </button>
+
           <button
             onClick={() => {
               setActiveTab('friends');
               setSelectedCategory('Bookies');
               setPage(1);
             }}
-            className={`relative z-10 flex-1 px-4 py-2 rounded-xl text-xs font-bold tracking-wider transition-colors duration-300 ${activeTab === 'friends' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+            className={`relative z-10 flex-1 h-full rounded-lg text-xs font-bold uppercase tracking-widest transition-colors duration-300 flex items-center justify-center ${activeTab === 'friends' ? 'text-white' : 'text-gray-500 hover:text-gray-300'
+              }`}
           >
-            BOOKIES
+            Bookies
           </button>
         </div>
       </div>
@@ -184,33 +210,41 @@ const Home = () => {
         {/* Left Column: Filters (Sticky) */}
         <div className="hidden lg:block lg:col-span-3">
           <div className="sticky top-24 space-y-6">
-            <div className="glass-panel rounded-3xl p-1 transition-all duration-300">
+            {/* Compact Filter Card / Dropdown */}
+            <div className="relative">
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className="w-full flex items-center justify-between p-5 text-white bg-transparent hover:bg-white/5 rounded-2xl transition-all"
+                className="w-full bg-[#0f1115] border border-white/5 rounded-3xl p-5 flex items-center justify-between hover:bg-white/5 transition-all shadow-xl group"
               >
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-emerald-500/10 rounded-lg">
+                <div className="flex items-center gap-4">
+                  <div className="p-3 bg-emerald-500/10 rounded-2xl group-hover:bg-emerald-500/20 transition-colors">
                     <Filter className="w-5 h-5 text-emerald-400" />
                   </div>
                   <div className="text-left">
-                    <h3 className="font-bold text-sm">Filters</h3>
-                    <p className="text-xs text-gray-400">{categories.find(c => c.value === selectedCategory)?.label}</p>
+                    <h3 className="font-bold text-white text-sm">Filters</h3>
+                    <p className="text-xs text-gray-500 font-medium mt-0.5">
+                      {selectedCategory === 'all' ? 'All Categories' : categories.find(c => c.value === selectedCategory)?.label}
+                    </p>
                   </div>
                 </div>
-                {isFilterOpen ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                <ChevronDown className={`w-5 h-5 text-gray-500 transition-transform duration-300 ${isFilterOpen ? 'rotate-180' : ''}`} />
               </button>
 
-              {isFilterOpen && (
-                <div className="px-3 pb-3 space-y-1 animate-fade-in-down">
-                  <div className="h-px bg-white/10 mx-2 mb-3" />
+              {/* Dropdown Menu */}
+              <div
+                className={`
+                  absolute top-full left-0 right-0 mt-4 bg-[#0f1115] border border-white/5 rounded-3xl p-2 shadow-2xl z-20 overflow-hidden transition-all duration-300 origin-top
+                  ${isFilterOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-4 pointer-events-none'}
+                `}
+              >
+                <div className="max-h-80 overflow-y-auto custom-scrollbar p-2 space-y-1">
                   {activeTab === 'confessions' && (
                     <button
                       onClick={() => {
                         setSelectedCategory('all');
                         setIsFilterOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedCategory === 'all' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                      className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition-all ${selectedCategory === 'all' ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
                     >
                       All Posts
                     </button>
@@ -230,13 +264,13 @@ const Home = () => {
                           setSelectedCategory(cat.value);
                           setIsFilterOpen(false);
                         }}
-                        className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedCategory === cat.value ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                        className={`w-full text-left px-4 py-3 rounded-2xl text-xs font-bold transition-all ${selectedCategory === cat.value ? 'bg-emerald-500 text-white shadow-lg shadow-emerald-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
                       >
                         {cat.label}
                       </button>
                     ))}
                 </div>
-              )}
+              </div>
             </div>
           </div>
         </div>
