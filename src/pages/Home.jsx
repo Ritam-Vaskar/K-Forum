@@ -172,7 +172,7 @@ const Home = () => {
         </div>
 
         {/* Rebuilt Toggle Switch - Fixed Width Container */}
-        <div className="bg-[#0f1115] border border-white/10 p-1 rounded-xl flex items-center shadow-2xl relative shrink-0 h-[50px] w-[260px]">
+        <div className="bg-[#0f1115] border border-white/10 p-1 rounded-xl flex items-center relative shrink-0 h-[50px] w-[260px]">
           {/* Sliding Indicator Background */}
           <div
             className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-lg shadow-lg shadow-emerald-500/20 transition-all duration-300 ease-out ${activeTab === 'friends' ? 'translate-x-[100%] left-1' : 'left-1'
@@ -214,7 +214,7 @@ const Home = () => {
             <div className="relative">
               <button
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className="w-full bg-[#0f1115] border border-white/5 rounded-3xl p-5 flex items-center justify-between hover:bg-white/5 transition-all shadow-xl group"
+                className="w-full bg-[#0f1115] border border-white/5 rounded-3xl p-5 flex items-center justify-between hover:bg-white/5 transition-all group"
               >
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-emerald-500/10 rounded-2xl group-hover:bg-emerald-500/20 transition-colors">
@@ -233,7 +233,7 @@ const Home = () => {
               {/* Dropdown Menu */}
               <div
                 className={`
-                  absolute top-full left-0 right-0 mt-4 bg-[#0f1115] border border-white/5 rounded-3xl p-2 shadow-2xl z-20 overflow-hidden transition-all duration-300 origin-top
+                  absolute top-full left-0 right-0 mt-4 bg-[#0f1115] border border-white/5 rounded-3xl p-2 z-20 overflow-hidden transition-all duration-300 origin-top
                   ${isFilterOpen ? 'opacity-100 scale-100 translate-y-0' : 'opacity-0 scale-95 -translate-y-4 pointer-events-none'}
                 `}
               >
