@@ -124,19 +124,35 @@ const Home = () => {
         <Plus className="w-8 h-8" />
       </button>
 
-      {/* Hero Header Section */}
-      <div className="flex flex-col md:flex-row items-end justify-between mb-12 gap-6">
-        <div>
-          <h1 className="text-4xl md:text-6xl font-black text-transparent bg-clip-text bg-gradient-to-r from-white via-gray-200 to-gray-500 mb-2 tracking-tight">
-            {activeTab === 'confessions' ? 'K-Forum' : 'Bookies'}
-          </h1>
-          <p className="text-gray-400 text-lg">
-            {activeTab === 'confessions' ? 'Nobody Does it Better !!' : 'Doubts ? just post it !!'}
-          </p>
+      {/* Inline Header: Search Bar + Filter + Sort + Switch */}
+      <div className="flex flex-col lg:flex-row items-stretch lg:items-center gap-4 mb-6">
+        {/* Search Bar (Left) with Inline Sort */}
+        <div className="relative flex-1 group">
+          <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-500" />
+          <div className="relative bg-[#1a1f2e]/60 backdrop-blur-xl rounded-2xl p-1.5 flex items-center border border-white/5">
+            <Search className="text-gray-500 w-4 h-4 ml-3" />
+            <input
+              type="text"
+              placeholder={activeTab === 'confessions' ? "Search posts..." : "Search bookies..."}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full bg-transparent text-white px-3 py-2 text-sm focus:outline-none placeholder-gray-600"
+            />
+            {/* Sort Select Integrated into Search Bar */}
+            <select
+              value={sortBy}
+              onChange={(e) => handleSortChange(e.target.value)}
+              className="bg-white/5 text-gray-300 text-xs font-bold rounded-xl px-3 py-2 border-none outline-none cursor-pointer hover:bg-white/10 transition-all ml-2 whitespace-nowrap"
+            >
+              <option value="createdAt">Newest</option>
+              <option value="upvotes">Top</option>
+              <option value="commentCount">Hot</option>
+            </select>
+          </div>
         </div>
 
-        {/* Premium Toggle Switch */}
-        <div className="glass-panel p-1 rounded-2xl flex relative w-full md:w-auto">
+        {/* Switch Toggle (Right) - Enlarged */}
+        <div className="glass-panel p-1 rounded-2xl flex relative shrink-0 h-[52px] min-w-[220px]">
           <div
             className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl transition-all duration-500 ease-out shadow-lg shadow-emerald-500/20 ${activeTab === 'friends' ? 'translate-x-full left-0' : 'left-1'}`}
           />
@@ -146,7 +162,7 @@ const Home = () => {
               setSelectedCategory('all');
               setPage(1);
             }}
-            className={`relative z-10 px-8 py-3 rounded-xl text-sm font-bold transition-colors duration-300 ${activeTab === 'confessions' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+            className={`relative z-10 flex-1 px-4 py-2 rounded-xl text-xs font-bold tracking-wider transition-colors duration-300 ${activeTab === 'confessions' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
           >
             POSTS
           </button>
@@ -156,7 +172,7 @@ const Home = () => {
               setSelectedCategory('Bookies');
               setPage(1);
             }}
-            className={`relative z-10 px-8 py-3 rounded-xl text-sm font-bold transition-colors duration-300 ${activeTab === 'friends' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
+            className={`relative z-10 flex-1 px-4 py-2 rounded-xl text-xs font-bold tracking-wider transition-colors duration-300 ${activeTab === 'friends' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
           >
             BOOKIES
           </button>
@@ -165,7 +181,6 @@ const Home = () => {
 
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-
         {/* Left Column: Filters (Sticky) */}
         <div className="hidden lg:block lg:col-span-3">
           <div className="sticky top-24 space-y-6">
@@ -226,50 +241,10 @@ const Home = () => {
           </div>
         </div>
 
-        {/* Center Column: Feed */}
+        {/* Main Feed Column */}
         <div className="lg:col-span-6">
 
-          {/* Mobile Filter Bar (Visible only on small screens) */}
-          <div className="lg:hidden glass-panel rounded-2xl p-4 mb-6 flex gap-2 overflow-x-auto scrollbar-hide">
-            {categories
-              .filter(c => {
-                if (activeTab === 'confessions') return c.value !== 'Bookies';
-                return c.value === 'Bookies';
-              })
-              .map(cat => (
-                <button
-                  key={cat.value}
-                  onClick={() => setSelectedCategory(cat.value)}
-                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold ${selectedCategory === cat.value ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-400'}`}
-                >
-                  {cat.label}
-                </button>
-              ))}
-          </div>
 
-          {/* Search Bar */}
-          <div className="relative mb-8 group">
-            <div className="absolute -inset-1 bg-gradient-to-r from-emerald-500 to-cyan-500 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-1000 group-hover:duration-200" />
-            <div className="relative bg-gray-900 rounded-2xl p-2 flex items-center glass-panel">
-              <Search className="text-gray-500 w-5 h-5 ml-4" />
-              <input
-                type="text"
-                placeholder="Search..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full bg-transparent text-white px-4 py-3 focus:outline-none placeholder-gray-600"
-              />
-              <select
-                value={sortBy}
-                onChange={(e) => handleSortChange(e.target.value)}
-                className="bg-gray-800 text-gray-300 text-sm rounded-xl px-4 py-2 border-none outline-none cursor-pointer hover:bg-gray-700 transition-colors mr-2"
-              >
-                <option value="createdAt">Newest</option>
-                <option value="upvotes">Top</option>
-                <option value="commentCount">Hot</option>
-              </select>
-            </div>
-          </div>
 
           {/* Posts Feed */}
           {loading ? (
@@ -340,10 +315,6 @@ const Home = () => {
 
             {/* Trending Hashtags */}
             <div className="glass-panel rounded-3xl p-6">
-              <h3 className="font-bold text-white mb-6 flex items-center gap-2">
-                <Tag className="w-4 h-4 text-emerald-400" />
-                Trending Now
-              </h3>
               <TrendingHashtags onTagClick={(tag) => {
                 setSearchTerm(`#${tag}`);
                 setPage(1);
