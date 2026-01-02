@@ -109,7 +109,7 @@ const PostCard = ({ post, onDelete }) => {
   return (
     <div
       onClick={handleInteraction}
-      className={`glass-card rounded-2xl p-6 mb-6 hover:bg-white/5 transition-all duration-300 relative group border border-gray-700/30 ${post.category === 'events' ? 'golden-shine' : ''}`}
+      className={`glass-card rounded-2xl p-4 sm:p-6 mb-6 hover:bg-white/5 transition-all duration-300 relative group border border-gray-700/30 ${post.category === 'events' ? 'golden-shine' : ''}`}
     >
       <div className="flex items-start justify-between mb-4">
         <div className="flex items-center justify-between w-full">

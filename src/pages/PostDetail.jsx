@@ -300,9 +300,9 @@ const PostDetail = () => {
         </div>
       )}
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto px-2 sm:px-6 lg:px-8">
         {/* Post */}
-        <div className="glass-panel rounded-2xl p-8 mb-8">
+        <div className="glass-panel rounded-2xl p-4 sm:p-8 mb-8">
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center space-x-3">
@@ -442,7 +442,7 @@ const PostDetail = () => {
 
         {/* Add Comment */}
         {user && (
-          <div className="glass-panel rounded-2xl p-6 mb-8">
+          <div className="glass-panel rounded-2xl p-4 sm:p-6 mb-8">
             <h3 className="text-lg font-semibold text-white mb-4">Add a Comment</h3>
             <form onSubmit={handleCommentSubmit}>
               <textarea
@@ -507,7 +507,7 @@ const PostDetail = () => {
                   <button
                     type="submit"
                     disabled={submittingComment || (!newComment.trim() && commentImageFiles.length === 0)}
-                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl flex items-center space-x-2 transition-all shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="w-full sm:w-auto bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl flex items-center justify-center space-x-2 transition-all shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     <Send className="w-4 h-4" />
                     <span className="font-bold">{submittingComment ? 'Posting...' : 'Post Answer'}</span>
@@ -530,7 +530,7 @@ const PostDetail = () => {
             </div>
           ) : (
             comments.map((comment) => (
-              <div key={comment._id} className="glass-card rounded-2xl p-6">
+              <div key={comment._id} className="glass-card rounded-2xl p-4 sm:p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">

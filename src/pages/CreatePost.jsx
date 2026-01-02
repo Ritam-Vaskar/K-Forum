@@ -137,9 +137,9 @@ const CreatePost = () => {
 
     <div className="relative z-10 py-8">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="glass-panel p-8 md:p-10 rounded-3xl shadow-2xl backdrop-blur-xl border border-white/5">
+        <div className="glass-panel p-4 sm:p-10 rounded-3xl shadow-2xl backdrop-blur-xl border border-white/5">
           <div className="text-center mb-10">
-            <h1 className="text-4xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-4 animate-float">
+            <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-4 animate-float">
               Create New Post
             </h1>
             <p className="text-gray-400 text-lg">Share your thoughts with the K-Forum community</p>
@@ -243,7 +243,7 @@ const CreatePost = () => {
             </div>
 
             {/* Anonymous Toggle */}
-            <div className={`flex items-center justify-between p-6 rounded-2xl border transition-all duration-300 ${formData.isAnonymous
+            <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 rounded-2xl border transition-all duration-300 gap-4 ${formData.isAnonymous
               ? 'bg-emerald-900/10 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.05)]'
               : 'bg-white/5 border-white/5'
               }`}>
@@ -333,9 +333,9 @@ const CreatePost = () => {
               <button
                 type="submit"
                 disabled={loading || !formData.title || !formData.content || !formData.category}
-                className="relative overflow-hidden bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+                className="w-full sm:w-auto relative overflow-hidden bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-8 sm:px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
               >
-                <span className="relative z-10 flex items-center gap-2">
+                <span className="relative z-10 flex items-center justify-center gap-2">
                   {loading ? 'Publishing...' : 'Publish Post'}
                   {!loading && <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
                 </span>

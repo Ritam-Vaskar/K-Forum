@@ -140,9 +140,9 @@ const Home = () => {
       </button>
 
       {/* Top Header Area */}
-      <div className="flex flex-row items-center gap-6 mb-8 mt-4">
+      <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6 mb-6 md:mb-8 mt-4">
         {/* Search & Sort Bar */}
-        <div className="flex-1 relative group">
+        <div className="w-full md:flex-1 relative group order-2 md:order-1">
           <div className="absolute -inset-0.5 bg-gradient-to-r from-emerald-500/20 to-cyan-500/20 rounded-2xl blur opacity-25 group-hover:opacity-50 transition duration-500" />
           <div className="relative bg-[#0f1115] border border-white/5 rounded-2xl flex items-center p-2 shadow-xl">
             <Search className="text-gray-500 w-5 h-5 ml-4" />
@@ -172,7 +172,7 @@ const Home = () => {
         </div>
 
         {/* Rebuilt Toggle Switch - Fixed Width Container */}
-        <div className="bg-[#0f1115] border border-white/10 p-1 rounded-xl flex items-center relative shrink-0 h-[50px] w-[260px]">
+        <div className="bg-[#0f1115] border border-white/10 p-1 rounded-xl flex items-center relative shrink-0 h-[50px] w-full md:w-[260px] order-1 md:order-2">
           {/* Sliding Indicator Background */}
           <div
             className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-gradient-to-tr from-emerald-500 to-teal-500 rounded-lg shadow-lg shadow-emerald-500/20 transition-all duration-300 ease-out ${activeTab === 'friends' ? 'translate-x-[100%] left-1' : 'left-1'
@@ -208,8 +208,8 @@ const Home = () => {
       {/* Main Content Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Left Column: Filters (Sticky) */}
-        <div className="hidden lg:block lg:col-span-3">
-          <div className="sticky top-24 space-y-6">
+        <div className="col-span-1 lg:col-span-3">
+          <div className="lg:sticky lg:top-24 space-y-6">
             {/* Compact Filter Card / Dropdown */}
             <div className="relative">
               <button
