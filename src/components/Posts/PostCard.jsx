@@ -135,26 +135,24 @@ const PostCard = ({ post, onDelete }) => {
                 <MoreVertical className="w-5 h-5 text-gray-400" />
               </button>
               {showOptions && (
-                <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50">
+                <div className="absolute right-0 mt-2 w-48 glass-panel rounded-xl shadow-2xl border border-white/10 z-50 overflow-hidden">
                   <button
                     onClick={() => {
                       setShowReportModal(true);
                       setShowOptions(false);
                     }}
-                    className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 flex items-center space-x-2 rounded-t-lg"
+                    className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 flex items-center space-x-2"
                   >
                     <Flag className="w-4 h-4" />
                     <span>Report Post</span>
                   </button>
-                  {user && post.author && (user._id === post.author._id || user.isAdmin) && (
-                    <button
-                      onClick={handleDelete}
-                      className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 flex items-center space-x-2 rounded-b-lg"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span>Delete Post</span>
-                    </button>
-                  )}
+                  <button
+                    onClick={handleDelete}
+                    className="w-full px-4 py-2 text-left text-red-400 hover:bg-white/5 flex items-center space-x-2"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                    <span>Delete Post</span>
+                  </button>
                 </div>
               )}
             </div>
@@ -214,7 +212,7 @@ const PostCard = ({ post, onDelete }) => {
           {post.tags.map((tag, index) => (
             <span
               key={index}
-              className="px-2 py-1 bg-gray-700 text-[#17d059] text-xs rounded-full"
+              className="px-2 py-1 bg-white/5 border border-white/5 text-[#17d059] text-xs rounded-full"
             >
               #{tag}
             </span>
@@ -244,14 +242,14 @@ const PostCard = ({ post, onDelete }) => {
       </div>
       {/* Report Modal */}
       {showReportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
-            <h3 className="text-xl font-semibold text-white mb-4">Report Post</h3>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] px-4">
+          <div className="glass-panel p-8 rounded-3xl shadow-2xl max-w-md w-full border border-white/10">
+            <h3 className="text-2xl font-black text-white mb-4 tracking-tight">Report Post</h3>
             <textarea
               value={reportReason}
               onChange={(e) => setReportReason(e.target.value)}
-              placeholder="Please provide a reason for reporting this post..."
-              className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-[#17d059] focus:ring-1 focus:ring-[#17d059] mb-4"
+              placeholder="Please provide a reason..."
+              className="w-full p-4 rounded-xl bg-white/5 text-white border border-white/10 focus:border-emerald-500/50 focus:outline-none mb-6 transition-all"
               rows="4"
             />
             <div className="flex justify-end space-x-3">
@@ -260,15 +258,15 @@ const PostCard = ({ post, onDelete }) => {
                   setShowReportModal(false);
                   setReportReason('');
                 }}
-                className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
+                className="px-4 py-2 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all"
               >
                 Cancel
               </button>
               <button
                 onClick={handleReport}
-                className="px-4 py-2 rounded bg-[#17d059] text-white hover:bg-emerald-600"
+                className="px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold transition-all"
               >
-                Submit Report
+                Submit
               </button>
             </div>
           </div>

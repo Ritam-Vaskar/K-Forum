@@ -197,7 +197,7 @@ const PostDetail = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#17d059]"></div>
       </div>
     );
@@ -205,55 +205,56 @@ const PostDetail = () => {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-2xl font-bold text-white mb-4">Post not found</h2>
           <Link to="/" className="text-[#17d059] hover:text-emerald-400">
             Return to home
           </Link>
         </div>
-
-        {/* Report Modal */}
-        {showReportModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-gray-800 p-6 rounded-lg shadow-xl max-w-md w-full">
-              <h3 className="text-xl font-semibold text-white mb-4">Report Post</h3>
-              <textarea
-                value={reportReason}
-                onChange={(e) => setReportReason(e.target.value)}
-                placeholder="Please provide a reason for reporting this post..."
-                className="w-full p-2 rounded bg-gray-700 text-white border border-gray-600 focus:border-[#17d059] focus:ring-1 focus:ring-[#17d059] mb-4"
-                rows="4"
-              />
-              <div className="flex justify-end space-x-3">
-                <button
-                  onClick={() => {
-                    setShowReportModal(false);
-                    setReportReason('');
-                  }}
-                  className="px-4 py-2 rounded bg-gray-700 text-white hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={handleReportPost}
-                  className="px-4 py-2 rounded bg-[#17d059] text-white hover:bg-emerald-600"
-                >
-                  Submit Report
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8">
+    <div className="min-h-screen py-8">
+      {/* Report Modal */}
+      {showReportModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] px-4">
+          <div className="glass-panel p-8 rounded-3xl shadow-2xl max-w-md w-full border border-white/10">
+            <h3 className="text-2xl font-black text-white mb-4 tracking-tight">Report Post</h3>
+            <p className="text-gray-400 mb-6 text-sm">Help us understand what's wrong with this post. Your report is anonymous.</p>
+            <textarea
+              value={reportReason}
+              onChange={(e) => setReportReason(e.target.value)}
+              placeholder="E.g. Discriminatory language, harassment, spam..."
+              className="w-full p-4 rounded-2xl bg-white/5 text-white border border-white/10 focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/50 focus:outline-none mb-6 transition-all placeholder-gray-600 resize-none"
+              rows="4"
+            />
+            <div className="flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowReportModal(false);
+                  setReportReason('');
+                }}
+                className="px-6 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-all font-bold"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleReportPost}
+                className="px-8 py-3 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 text-white font-bold shadow-lg shadow-emerald-500/20 hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all"
+              >
+                Submit Report
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Post */}
-        <div className="bg-gray-800 rounded-lg p-8 shadow-lg border border-gray-700 mb-8">
+        <div className="glass-panel rounded-2xl p-8 mb-8">
           <div className="flex items-start justify-between mb-6">
             <div className="flex items-center justify-between w-full">
               <div className="flex items-center space-x-3">
@@ -354,7 +355,7 @@ const PostDetail = () => {
               {post.tags.map((tag, index) => (
                 <span
                   key={index}
-                  className="px-3 py-1 bg-gray-700 text-[#17d059] text-sm rounded-full"
+                  className="px-3 py-1 bg-white/5 border border-white/5 text-[#17d059] text-sm rounded-full"
                 >
                   #{tag}
                 </span>
@@ -392,14 +393,14 @@ const PostDetail = () => {
 
         {/* Add Comment */}
         {user && (
-          <div className="bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-700 mb-8">
+          <div className="glass-panel rounded-2xl p-6 mb-8">
             <h3 className="text-lg font-semibold text-white mb-4">Add a Comment</h3>
             <form onSubmit={handleCommentSubmit}>
               <textarea
                 value={newComment}
                 onChange={(e) => setNewComment(e.target.value)}
                 placeholder="Share your thoughts..."
-                className="w-full bg-gray-700 text-white px-4 py-3 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none transition-colors resize-none"
+                className="w-full bg-white/5 text-white px-4 py-3 rounded-lg border border-white/10 focus:border-[#17d059] focus:outline-none transition-colors resize-none"
                 rows="4"
                 required
               />
@@ -432,13 +433,13 @@ const PostDetail = () => {
             Comments ({comments.length})
           </h3>
           {comments.length === 0 ? (
-            <div className="bg-gray-800 rounded-lg p-8 text-center border border-gray-700">
+            <div className="glass-card rounded-2xl p-8 text-center">
               <MessageCircle className="w-12 h-12 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-400">No comments yet. Be the first to comment!</p>
             </div>
           ) : (
             comments.map((comment) => (
-              <div key={comment._id} className="bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-700">
+              <div key={comment._id} className="glass-card rounded-2xl p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3">
                     <div className="w-10 h-10 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">

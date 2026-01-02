@@ -35,7 +35,7 @@ const ImageViewer = ({ images, initialIndex = 0, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-md z-50 flex items-center justify-center">
       <div className="relative w-full h-full flex items-center justify-center">
         {/* Close button */}
         <button
