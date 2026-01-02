@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Gamepad2, PlusSquare, Search, User, Menu, X, Sparkles } from 'lucide-react';
+import { Home, Gamepad2, PlusSquare, Search, User, Menu, X, Sparkles, Shield } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import TrendingHashtags from '../TrendingHashtags';
 
@@ -24,6 +24,10 @@ const MobileHeader = () => {
         { path: '/', icon: Search, label: 'Search' },
         { path: '/profile', icon: User, label: 'Profile' }
     ];
+
+    if (user?.role === 'admin') {
+        navItems.push({ path: '/admin', icon: Shield, label: 'Admin Dashboard' });
+    }
 
     return (
         <>
