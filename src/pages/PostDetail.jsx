@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 import toast from 'react-hot-toast';
-import { ArrowUp, ArrowDown, MessageCircle, Eye, Clock, User, Send, MoreVertical, Flag, Trash2, Image } from 'lucide-react';
+import { ArrowUp, ArrowDown, MessageCircle, Eye, Clock, User, Send, MoreVertical, Flag, Trash2, Image, X } from 'lucide-react';
 
 const PostDetail = () => {
   const { id } = useParams();
@@ -17,6 +17,9 @@ const PostDetail = () => {
   const [submittingComment, setSubmittingComment] = useState(false);
   const [showPostOptions, setShowPostOptions] = useState(false);
   const [showCommentOptions, setShowCommentOptions] = useState(null);
+  const [commentImageFiles, setCommentImageFiles] = useState([]);
+  const [commentImagePreviews, setCommentImagePreviews] = useState([]);
+  const [viewerImages, setViewerImages] = useState([]);
 
   useEffect(() => {
     fetchPost();
@@ -146,6 +149,36 @@ const PostDetail = () => {
     }
   };
 
+  const handleCommentImageChange = (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length + commentImageFiles.length > 5) {
+      toast.error('Maximum 5 images allowed per comment');
+      return;
+    }
+
+    const newFiles = files.filter(file => {
+      if (file.size > 10 * 1024 * 1024) {
+        toast.error(`${file.name} is too large. Max 10MB`);
+        return false;
+      }
+      return true;
+    });
+
+    const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+    setCommentImageFiles([...commentImageFiles, ...newFiles]);
+    setCommentImagePreviews([...commentImagePreviews, ...newPreviews]);
+  };
+
+  const removeCommentImage = (index) => {
+    const newFiles = [...commentImageFiles];
+    const newPreviews = [...commentImagePreviews];
+    URL.revokeObjectURL(newPreviews[index]);
+    newFiles.splice(index, 1);
+    newPreviews.splice(index, 1);
+    setCommentImageFiles(newFiles);
+    setCommentImagePreviews(newPreviews);
+  };
+
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
     if (!user) {
@@ -155,12 +188,27 @@ const PostDetail = () => {
 
     setSubmittingComment(true);
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/comments`, {
-        content: newComment,
-        isAnonymous: isAnonymousComment
+      const formData = new FormData();
+      formData.append('content', newComment);
+      formData.append('isAnonymous', post.category === 'Bookies' ? 'false' : isAnonymousComment.toString());
+
+      commentImageFiles.forEach(file => {
+        formData.append('images', file);
       });
+
+      const response = await axios.post(
+        `${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/comments`,
+        formData,
+        {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        }
+      );
       setComments([response.data, ...comments]);
       setNewComment('');
+      setCommentImageFiles([]);
+      setCommentImagePreviews([]);
       setPost({
         ...post,
         commentCount: post.commentCount + 1
@@ -322,6 +370,7 @@ const PostDetail = () => {
                     key={index}
                     className="relative group cursor-pointer aspect-square overflow-hidden rounded-lg"
                     onClick={() => {
+                      setViewerImages(post.attachments.map(a => a.url));
                       setSelectedImageIndex(index);
                       setShowImageViewer(true);
                     }}
@@ -344,7 +393,7 @@ const PostDetail = () => {
           {/* Image Viewer Modal */}
           {showImageViewer && (
             <ImageViewer
-              images={post.attachments.map(attachment => attachment.url)}
+              images={viewerImages}
               initialIndex={selectedImageIndex}
               onClose={() => setShowImageViewer(false)}
             />
@@ -404,24 +453,66 @@ const PostDetail = () => {
                 rows="4"
                 required
               />
-              <div className="flex items-center justify-between mt-4">
-                <label className="flex items-center space-x-2 text-gray-400">
-                  <input
-                    type="checkbox"
-                    checked={isAnonymousComment}
-                    onChange={(e) => setIsAnonymousComment(e.target.checked)}
-                    className="rounded border-gray-600 text-[#17d059] focus:ring-[#17d059]"
-                  />
-                  <span>Comment anonymously</span>
-                </label>
-                <button
-                  type="submit"
-                  disabled={submittingComment || !newComment.trim()}
-                  className="bg-[#17d059] hover:bg-[#15b84f] text-white px-6 py-2 rounded-lg flex items-center space-x-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <Send className="w-4 h-4" />
-                  <span>{submittingComment ? 'Posting...' : 'Post Comment'}</span>
-                </button>
+              <div className="flex flex-col space-y-4 mt-4">
+                {/* Image Previews */}
+                {commentImagePreviews.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {commentImagePreviews.map((preview, index) => (
+                      <div key={index} className="relative w-20 h-20 rounded-lg overflow-hidden border border-white/10">
+                        <img src={preview} alt="preview" className="w-full h-full object-cover" />
+                        <button
+                          type="button"
+                          onClick={() => removeCommentImage(index)}
+                          className="absolute top-1 right-1 bg-black/50 rounded-full p-1 text-white hover:bg-red-500 transition-colors"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    {post.category !== 'Bookies' && (
+                      <label className="flex items-center space-x-2 text-gray-400 cursor-pointer hover:text-white transition-colors">
+                        <input
+                          type="checkbox"
+                          checked={isAnonymousComment}
+                          onChange={(e) => setIsAnonymousComment(e.target.checked)}
+                          className="rounded border-gray-600 text-[#17d059] focus:ring-[#17d059]"
+                        />
+                        <span className="text-sm">Comment anonymously</span>
+                      </label>
+                    )}
+
+                    {post.category === 'Bookies' && (
+                      <label className="flex items-center space-x-2 text-[#17d059] cursor-pointer hover:text-emerald-400 transition-colors">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          onChange={handleCommentImageChange}
+                          className="hidden"
+                          id="comment-image-upload"
+                        />
+                        <div className="flex items-center space-x-2 bg-white/5 px-4 py-2 rounded-xl border border-white/5 group">
+                          <Image className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                          <span className="text-sm font-bold">Add Answer Image (Max 10MB)</span>
+                        </div>
+                      </label>
+                    )}
+                  </div>
+
+                  <button
+                    type="submit"
+                    disabled={submittingComment || (!newComment.trim() && commentImageFiles.length === 0)}
+                    className="bg-emerald-500 hover:bg-emerald-600 text-white px-6 py-2.5 rounded-xl flex items-center space-x-2 transition-all shadow-lg shadow-emerald-500/20 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Send className="w-4 h-4" />
+                    <span className="font-bold">{submittingComment ? 'Posting...' : 'Post Answer'}</span>
+                  </button>
+                </div>
               </div>
             </form>
           </div>
@@ -455,6 +546,29 @@ const PostDetail = () => {
                         </span>
                       </div>
                       <p className="text-gray-300 whitespace-pre-wrap">{comment.content}</p>
+
+                      {/* Comment Image Attachments */}
+                      {comment.attachments && comment.attachments.length > 0 && (
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4 mb-3">
+                          {comment.attachments.map((attachment, idx) => (
+                            <div
+                              key={idx}
+                              className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group border border-white/5 hover:border-emerald-500/30 transition-all"
+                              onClick={() => {
+                                setViewerImages(comment.attachments.map(a => a.url));
+                                setSelectedImageIndex(idx);
+                                setShowImageViewer(true);
+                              }}
+                            >
+                              <img src={attachment.url} alt="comment-img" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                                <Eye className="w-5 h-5 text-white" />
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
                       <div className="flex items-center space-x-4 mt-3">
                         <div className="flex items-center space-x-1 text-gray-400">
                           <ArrowUp className="w-4 h-4" />
@@ -470,23 +584,23 @@ const PostDetail = () => {
                   <div className="relative">
                     <button
                       onClick={() => setShowCommentOptions(showCommentOptions === comment._id ? null : comment._id)}
-                      className="p-1 hover:bg-gray-700 rounded-full transition-colors"
+                      className="p-1 hover:bg-white/5 rounded-full transition-colors"
                     >
                       <MoreVertical className="w-4 h-4 text-gray-400" />
                     </button>
                     {showCommentOptions === comment._id && (
-                      <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-lg shadow-lg border border-gray-700 z-50">
+                      <div className="absolute right-0 mt-2 w-48 glass-panel rounded-xl shadow-2xl border border-white/10 z-50 overflow-hidden">
                         <button
                           onClick={() => handleReportComment(comment._id)}
-                          className="w-full px-4 py-2 text-left text-gray-300 hover:bg-gray-700 flex items-center space-x-2 rounded-t-lg"
+                          className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 flex items-center space-x-2"
                         >
                           <Flag className="w-4 h-4" />
                           <span>Report Comment</span>
                         </button>
-                        {user && (user._id === comment.author._id || user.isAdmin) && (
+                        {user && (user._id === (comment.author?._id) || user.isAdmin) && (
                           <button
                             onClick={() => handleDeleteComment(comment._id)}
-                            className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 flex items-center space-x-2 rounded-b-lg"
+                            className="w-full px-4 py-2 text-left text-red-400 hover:bg-white/5 flex items-center space-x-2"
                           >
                             <Trash2 className="w-4 h-4" />
                             <span>Delete Comment</span>

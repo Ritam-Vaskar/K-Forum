@@ -332,16 +332,35 @@ router.get('/:id/comments', async (req, res) => {
 });
 
 // Add comment
-router.post('/:id/comments', auth, async (req, res) => {
+router.post('/:id/comments', auth, upload.array('images', 5), async (req, res) => {
   try {
     const { content, isAnonymous, parentComment } = req.body;
+
+    // Handle image uploads
+    const attachments = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
+        try {
+          const base64Image = `data:${file.mimetype};base64,${file.buffer.toString('base64')}`;
+          const imageUrl = await uploadImage(base64Image);
+          attachments.push({
+            url: imageUrl,
+            type: 'image',
+            filename: file.originalname
+          });
+        } catch (error) {
+          console.warn('Comment image upload failed (skipping):', error.message);
+        }
+      }
+    }
 
     const comment = new Comment({
       content,
       author: req.userId,
       post: req.params.id,
-      isAnonymous: isAnonymous || false,
-      parentComment: parentComment || null
+      isAnonymous: isAnonymous === 'true', // Handle form-data (strings)
+      parentComment: parentComment || null,
+      attachments
     });
 
     await comment.save();
@@ -361,6 +380,12 @@ router.post('/:id/comments', auth, async (req, res) => {
     res.status(201).json(processedComment);
   } catch (error) {
     console.error('Add comment error:', error);
+    if (error instanceof multer.MulterError) {
+      return res.status(400).json({
+        message: 'File upload error',
+        error: error.message
+      });
+    }
     res.status(500).json({ message: 'Server error' });
   }
 });
