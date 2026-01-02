@@ -40,7 +40,7 @@ const UserProfile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-12 w-12 border-4 border-[#17d059] border-t-transparent"></div>
       </div>
     );
@@ -48,7 +48,7 @@ const UserProfile = () => {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-white text-xl">User not found</div>
       </div>
     );
@@ -57,7 +57,7 @@ const UserProfile = () => {
   const wordleStreak = user.wordleStreak || { current: 0, max: 0, totalWins: 0 };
 
   return (
-    <div className="min-h-screen bg-gray-900 py-8 px-4">
+    <div className="min-h-screen py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Profile Header */}
         <div className="bg-gray-800 rounded-2xl p-8 shadow-lg border border-gray-700 mb-8">

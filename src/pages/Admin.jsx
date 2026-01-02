@@ -115,14 +115,14 @@ const Admin = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-[#17d059]"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900 py-8">
+    <div className="min-h-screen py-8">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
         <div className="mb-8">
@@ -142,8 +142,8 @@ const Admin = () => {
               key={tab}
               onClick={() => setActiveTab(tab)}
               className={`px-4 py-2 rounded-lg font-medium transition-all capitalize flex items-center gap-2 ${activeTab === tab
-                  ? 'bg-[#17d059] text-white'
-                  : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
+                ? 'bg-[#17d059] text-white'
+                : 'bg-gray-800 text-gray-400 hover:text-white hover:bg-gray-700'
                 }`}
             >
               {tab === 'wordle' && <Gamepad2 className="w-4 h-4" />}
@@ -305,8 +305,8 @@ const Admin = () => {
                           </div>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-xs font-medium ${post.moderationStatus === 'approved' ? 'bg-green-500/20 text-green-400' :
-                            post.moderationStatus === 'flagged' ? 'bg-orange-500/20 text-orange-400' :
-                              'bg-red-500/20 text-red-400'
+                          post.moderationStatus === 'flagged' ? 'bg-orange-500/20 text-orange-400' :
+                            'bg-red-500/20 text-red-400'
                           }`}>
                           {post.moderationStatus.toUpperCase()}
                         </span>
