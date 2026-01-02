@@ -17,7 +17,12 @@ router.get('/stats', auth, isAdmin, async (req, res) => {
     const pendingReports = await Post.countDocuments({ 'reports.0': { $exists: true } });
 
     // NEW: Count pending review posts
-    const pendingReview = await Post.countDocuments({ status: 'PENDING_REVIEW' });
+    const pendingReview = await Post.countDocuments({
+      $or: [
+        { status: 'PENDING_REVIEW' },
+        { 'moderation.isUnsafe': true }
+      ]
+    });
     const publishedPosts = await Post.countDocuments({ status: 'PUBLISHED' });
     const rejectedPosts = await Post.countDocuments({ status: 'REJECTED' });
 
@@ -162,7 +167,8 @@ router.get('/flagged-posts', auth, isAdmin, async (req, res) => {
     const posts = await Post.find({
       $or: [
         { moderationStatus: 'flagged' },
-        { status: 'PENDING_REVIEW' }
+        { status: 'PENDING_REVIEW' },
+        { 'moderation.isUnsafe': true }
       ]
     })
       .populate('author', 'name studentId')

@@ -19,6 +19,7 @@ const Home = () => {
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [activeTab, setActiveTab] = useState('confessions'); // confessions | friends
 
   // Categories (must match Post model enum)
   const categories = [
@@ -42,7 +43,7 @@ const Home = () => {
 
   useEffect(() => {
     fetchPosts();
-  }, [selectedCategory, searchTerm, sortBy, page]);
+  }, [selectedCategory, searchTerm, sortBy, page, activeTab]);
 
   const fetchPosts = async () => {
     try {
@@ -58,6 +59,20 @@ const Home = () => {
         params.tag = searchTerm.trim().substring(1);
       } else if (searchTerm.trim()) {
         params.search = searchTerm;
+      }
+
+      // Handle Tab-based filtering
+      if (activeTab === 'confessions') {
+        // Post Section: Exclude Bookies
+        if (selectedCategory === 'all') {
+          params.excludeCategory = 'Bookies';
+        }
+      } else if (activeTab === 'friends') {
+        // Bookie Section: Show only Bookies
+        // Force category to Bookies if users try to switch (though UI should prevent it)
+        if (selectedCategory === 'all') {
+          params.category = 'Bookies';
+        }
       }
 
       const response = await axios.get('/api/posts', { params });
@@ -96,7 +111,7 @@ const Home = () => {
     navigate('/create-post');
   };
 
-  const [activeTab, setActiveTab] = useState('confessions'); // confessions | friends
+
 
   return (
     <div className="relative min-h-[calc(100vh-4rem)]">
@@ -126,13 +141,21 @@ const Home = () => {
             className={`absolute top-1 bottom-1 w-[calc(50%-4px)] bg-gradient-to-r from-emerald-500 to-teal-500 rounded-xl transition-all duration-500 ease-out shadow-lg shadow-emerald-500/20 ${activeTab === 'friends' ? 'translate-x-full left-0' : 'left-1'}`}
           />
           <button
-            onClick={() => setActiveTab('confessions')}
+            onClick={() => {
+              setActiveTab('confessions');
+              setSelectedCategory('all');
+              setPage(1);
+            }}
             className={`relative z-10 px-8 py-3 rounded-xl text-sm font-bold transition-colors duration-300 ${activeTab === 'confessions' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
           >
             POSTS
           </button>
           <button
-            onClick={() => setActiveTab('friends')}
+            onClick={() => {
+              setActiveTab('friends');
+              setSelectedCategory('Bookies');
+              setPage(1);
+            }}
             className={`relative z-10 px-8 py-3 rounded-xl text-sm font-bold transition-colors duration-300 ${activeTab === 'friends' ? 'text-white' : 'text-gray-400 hover:text-white'}`}
           >
             BOOKIES
@@ -166,27 +189,37 @@ const Home = () => {
               {isFilterOpen && (
                 <div className="px-3 pb-3 space-y-1 animate-fade-in-down">
                   <div className="h-px bg-white/10 mx-2 mb-3" />
-                  <button
-                    onClick={() => {
-                      setSelectedCategory('all');
-                      setIsFilterOpen(false);
-                    }}
-                    className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedCategory === 'all' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
-                  >
-                    All Posts
-                  </button>
-                  {categories.filter(c => c.value !== 'all').map(cat => (
+                  {activeTab === 'confessions' && (
                     <button
-                      key={cat.value}
                       onClick={() => {
-                        setSelectedCategory(cat.value);
+                        setSelectedCategory('all');
                         setIsFilterOpen(false);
                       }}
-                      className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedCategory === cat.value ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                      className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedCategory === 'all' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
                     >
-                      {cat.label}
+                      All Posts
                     </button>
-                  ))}
+                  )}
+                  {categories
+                    .filter(c => {
+                      if (activeTab === 'confessions') {
+                        return c.value !== 'all' && c.value !== 'Bookies';
+                      } else {
+                        return c.value === 'Bookies';
+                      }
+                    })
+                    .map(cat => (
+                      <button
+                        key={cat.value}
+                        onClick={() => {
+                          setSelectedCategory(cat.value);
+                          setIsFilterOpen(false);
+                        }}
+                        className={`w-full text-left px-4 py-3 rounded-xl text-sm font-medium transition-all ${selectedCategory === cat.value ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'text-gray-400 hover:bg-white/5 hover:text-white'}`}
+                      >
+                        {cat.label}
+                      </button>
+                    ))}
                 </div>
               )}
             </div>
@@ -198,15 +231,20 @@ const Home = () => {
 
           {/* Mobile Filter Bar (Visible only on small screens) */}
           <div className="lg:hidden glass-panel rounded-2xl p-4 mb-6 flex gap-2 overflow-x-auto scrollbar-hide">
-            {categories.map(cat => (
-              <button
-                key={cat.value}
-                onClick={() => setSelectedCategory(cat.value)}
-                className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold ${selectedCategory === cat.value ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-400'}`}
-              >
-                {cat.label}
-              </button>
-            ))}
+            {categories
+              .filter(c => {
+                if (activeTab === 'confessions') return c.value !== 'Bookies';
+                return c.value === 'Bookies';
+              })
+              .map(cat => (
+                <button
+                  key={cat.value}
+                  onClick={() => setSelectedCategory(cat.value)}
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-sm font-bold ${selectedCategory === cat.value ? 'bg-emerald-500 text-white' : 'bg-white/5 text-gray-400'}`}
+                >
+                  {cat.label}
+                </button>
+              ))}
           </div>
 
           {/* Search Bar */}

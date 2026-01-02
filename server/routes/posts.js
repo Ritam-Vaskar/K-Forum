@@ -74,6 +74,7 @@ router.get('/', async (req, res) => {
       page = 1,
       limit = 10,
       category,
+      excludeCategory,
       search,
       tag,
       sortBy = 'createdAt',
@@ -81,15 +82,18 @@ router.get('/', async (req, res) => {
     } = req.query;
 
     // Include both old posts (moderationStatus=approved) and new posts (status=PUBLISHED)
+    // Also catch posts that might have reverted to default status but are approved
     let query = {
       $or: [
         { status: 'PUBLISHED' },
-        { status: { $exists: false }, moderationStatus: 'approved' }
+        { moderationStatus: 'approved' }
       ]
     };
 
     if (category && category !== 'all') {
       query.category = category;
+    } else if (excludeCategory) {
+      query.category = { $ne: excludeCategory };
     }
 
     if (tag) {

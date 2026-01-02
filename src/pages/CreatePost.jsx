@@ -26,7 +26,8 @@ const CreatePost = () => {
     { id: 'internships', name: 'Internships', icon: '💼' },
     { id: 'lost-found', name: 'Lost & Found', icon: '🔍' },
     { id: 'clubs', name: 'Clubs', icon: '🏛️' },
-    { id: 'general', name: 'General', icon: '💬' }
+    { id: 'general', name: 'General', icon: '💬' },
+    { id: 'Bookies', name: 'Bookies', icon: '🤖' }
   ];
 
   const handleChange = (e) => {

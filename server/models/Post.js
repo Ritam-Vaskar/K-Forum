@@ -24,7 +24,7 @@ const postSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['academics', 'events', 'rants', 'internships', 'lost-found', 'clubs', 'general']
+    enum: ['academics', 'events', 'rants', 'internships', 'lost-found', 'clubs', 'general', 'Bookies']
   },
   tags: [{
     type: String,
