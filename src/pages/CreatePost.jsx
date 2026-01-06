@@ -325,13 +325,19 @@ const CreatePost = () => {
                 </label>
 
                 {selectedImages.length > 0 && (
-                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                  <div className={`${selectedImages.length === 1 ? '' : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4'}`}>
                     {selectedImages.map((image, index) => (
-                      <div key={index} className="relative group aspect-square rounded-2xl overflow-hidden glass-card">
+                      <div key={index} className={`relative group overflow-hidden glass-card rounded-2xl ${selectedImages.length === 1
+                          ? 'w-full max-w-2xl mx-auto'
+                          : 'aspect-square'
+                        }`}>
                         <img
                           src={image.url}
                           alt={`Preview ${index + 1}`}
-                          className="w-full h-full object-cover"
+                          className={`w-full object-cover ${selectedImages.length === 1
+                              ? 'h-auto max-h-[500px] object-contain bg-black/5'
+                              : 'h-full'
+                            }`}
                         />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                           <button

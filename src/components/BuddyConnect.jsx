@@ -33,6 +33,20 @@ const BuddyConnect = () => {
         }
     };
 
+    const getBranchAbbreviation = (branch) => {
+        const branchMap = {
+            'Computer Science Engineering': 'CSE',
+            'Information Technology': 'IT',
+            'Electronics and Communication': 'ECE',
+            'Mechanical Engineering': 'ME',
+            'Civil Engineering': 'CE',
+            'Electrical Engineering': 'EE',
+            'Biotechnology': 'Biotech',
+            'Other': 'Other'
+        };
+        return branchMap[branch] || branch;
+    };
+
     if (loading) return (
         <div className="glass-panel rounded-3xl p-6 mt-6 animate-pulse">
             <div className="h-6 w-32 bg-white/5 rounded mb-4"></div>
@@ -76,7 +90,7 @@ const BuddyConnect = () => {
                             </div>
                             <div className="overflow-hidden">
                                 <h4 className="text-sm font-bold text-gray-200 truncate w-28 lg:w-32">{user.name}</h4>
-                                <p className="text-xs text-gray-500 truncate">{user.branch} • {user.year} Year</p>
+                                <p className="text-xs text-gray-500 truncate">{getBranchAbbreviation(user.branch)} • {user.year} Year</p>
                             </div>
                         </div>
                         <button
