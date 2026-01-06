@@ -31,13 +31,13 @@ const Sidebar = ({ isOpen, setIsOpen }) => {
             {/* Toggle Button */}
             <button
                 onClick={() => setIsOpen(!isOpen)}
-                className="absolute -right-3 top-10 bg-gray-800 border border-emerald-500/30 text-emerald-400 p-1 rounded-full shadow-lg hover:bg-gray-700 hover:scale-110 transition-all z-50"
+                className="absolute -right-3 top-[56px] -translate-y-1/2 bg-gray-800 border border-emerald-500/30 text-emerald-400 p-1 rounded-full shadow-lg hover:bg-gray-700 hover:scale-110 transition-all z-50"
             >
                 {isOpen ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
             </button>
 
             {/* Minimal Logo */}
-            <div className={`flex items-center ${isOpen ? 'justify-start px-6' : 'justify-center'} mb-12 transition-all duration-300`}>
+            <div className={`flex items-center ${isOpen ? 'justify-start pl-4' : 'justify-center'} mb-12 transition-all duration-300`}>
                 <div className="w-12 h-12 shrink-0 bg-gradient-to-tr from-emerald-400 to-cyan-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/20 animate-float">
                     <span className="text-white font-extrabold text-2xl">K</span>
                 </div>

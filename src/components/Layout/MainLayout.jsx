@@ -3,7 +3,7 @@ import Sidebar from './Sidebar';
 import MobileHeader from './MobileHeader';
 
 const MainLayout = ({ children }) => {
-    const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     return (
         <div className="min-h-screen bg-[#0f1115] text-gray-100 font-sans selection:bg-emerald-500/30">

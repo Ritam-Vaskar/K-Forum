@@ -241,12 +241,6 @@ body {
 }
 
 .golden-shine::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: -100%;
-  width: 50%;
-  height: 100%;
   background: linear-gradient(to right,
       transparent,
       rgba(255, 215, 0, 0.4),
@@ -255,4 +249,19 @@ body {
   animation: shine 3s infinite;
   pointer-events: none;
   z-index: 10;
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.8) translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out forwards;
 }

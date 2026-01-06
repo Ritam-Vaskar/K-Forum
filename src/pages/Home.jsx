@@ -4,6 +4,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import PostCard from '../components/Posts/PostCard';
 import TrendingHashtags from '../components/TrendingHashtags';
+import EventCalendar from '../components/EventCalendar';
+import BuddyConnect from '../components/BuddyConnect';
 import { Search, Filter, Tag, Plus, ChevronDown, ChevronUp } from 'lucide-react';
 
 const Home = () => {
@@ -272,6 +274,11 @@ const Home = () => {
                 </div>
               </div>
             </div>
+
+            {/* Buddy Connect Widget for Desktop */}
+            <div className="hidden lg:block">
+              <BuddyConnect />
+            </div>
           </div>
         </div>
 
@@ -291,7 +298,12 @@ const Home = () => {
             <div className="space-y-8">
               {posts.map((post, idx) => (
                 <div key={post._id} style={{ animationDelay: `${idx * 100}ms` }} className="animate-bounce-in">
-                  <PostCard post={post} />
+                  <PostCard
+                    post={post}
+                    onDelete={(deletedPostId) => {
+                      setPosts(posts.filter(p => p._id !== deletedPostId));
+                    }}
+                  />
                 </div>
               ))}
 
@@ -330,22 +342,8 @@ const Home = () => {
         <div className="hidden lg:block lg:col-span-3">
           <div className="sticky top-24 space-y-6">
 
-            {/* Stats Card */}
-            <div className="glass-card rounded-3xl p-6 relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-emerald-500/10 rounded-full blur-2xl -mr-16 -mt-16 group-hover:bg-emerald-500/20 transition-all duration-700" />
-              <h3 className="font-bold text-white mb-1">Campus Pulse</h3>
-              <p className="text-xs text-gray-400 mb-4">Live Activity</p>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-white/5 rounded-2xl p-3 text-center">
-                  <div className="text-2xl font-black text-emerald-400">24</div>
-                  <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Online</div>
-                </div>
-                <div className="bg-white/5 rounded-2xl p-3 text-center">
-                  <div className="text-2xl font-black text-cyan-400">{posts.length}</div>
-                  <div className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Posts</div>
-                </div>
-              </div>
-            </div>
+            {/* Event Calendar */}
+            <EventCalendar />
 
             {/* Trending Hashtags */}
             <div className="glass-panel rounded-3xl p-6">

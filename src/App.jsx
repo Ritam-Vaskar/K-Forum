@@ -12,8 +12,12 @@ import PostDetail from './pages/PostDetail';
 import Profile from './pages/Profile';
 import UserProfile from './pages/UserProfile';
 import Admin from './pages/Admin';
+import BuddyConnectPage from './pages/BuddyConnectPage';
 import Wordle from './pages/Wordle';
+
+import CalendarPage from './pages/CalendarPage';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
+import ScrollToTop from './components/ScrollToTop';
 
 // Separate component to use Router context if needed
 const MainContainer = () => {
@@ -57,6 +61,8 @@ const MainContainer = () => {
             </ProtectedRoute>
           }
         />
+        <Route path="/calendar" element={<CalendarPage />} />
+        <Route path="/buddy-connect" element={<BuddyConnectPage />} />
         <Route
           path="/admin"
           element={
@@ -76,7 +82,7 @@ const MainContainer = () => {
           }
         }}
       />
-    </MainLayout>
+    </MainLayout >
   );
 };
 
@@ -85,6 +91,7 @@ function App() {
     <AuthProvider>
       <SocketProvider>
         <Router>
+          <ScrollToTop />
           <MainContainer />
         </Router>
       </SocketProvider>

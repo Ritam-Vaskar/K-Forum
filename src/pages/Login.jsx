@@ -84,21 +84,7 @@ const Login = () => {
     }
   };
 
-  const handleDemoLogin = () => {
-    setFormData({
-      email: 'dummy@kiit.ac.in',
-      password: 'dummy123'
-    });
-    toast.success('Demo credentials filled!');
-  };
 
-  const handleAdminDemoLogin = () => {
-    setFormData({
-      email: 'admin@kiit.ac.in',
-      password: 'adminpassword'
-    });
-    toast.success('Admin demo credentials filled!');
-  };
 
   return (
     <div className="min-h-screen flex items-center justify-center px-4">
@@ -159,22 +145,7 @@ const Login = () => {
                   {loading ? 'Signing In...' : 'Sign In'}
                 </button>
 
-                <div className="flex justify-between space-x-2">
-                  <button
-                    type="button"
-                    onClick={handleDemoLogin}
-                    className="flex-1 text-xs text-gray-400 hover:text-white border border-gray-600 hover:border-gray-400 rounded px-2 py-1 transition-colors"
-                  >
-                    Student Demo
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleAdminDemoLogin}
-                    className="flex-1 text-xs text-[#17d059] hover:text-emerald-400 border border-[#17d059]/50 hover:border-[#17d059] rounded px-2 py-1 transition-colors"
-                  >
-                    Admin Demo
-                  </button>
-                </div>
+
               </form>
             </>
           ) : (

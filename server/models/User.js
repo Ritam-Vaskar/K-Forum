@@ -84,6 +84,28 @@ const userSchema = new mongoose.Schema({
       default: 0
     }
   },
+
+  // Buddy Connect System
+  connections: [{
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  }],
+  connectionRequests: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User',
+      required: true
+    },
+    status: {
+      type: String,
+      enum: ['pending', 'accepted', 'rejected'],
+      default: 'pending'
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   preferences: {
     allowAnonymous: {
       type: Boolean,

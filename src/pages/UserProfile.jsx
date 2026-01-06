@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import axios from 'axios';
+import axios from '../services/axiosSetup';
 import toast from 'react-hot-toast';
 import { User, Book, Code, Mail, Calendar, Flame, Trophy, Target } from 'lucide-react';
 import PostCard from '../components/Posts/PostCard';

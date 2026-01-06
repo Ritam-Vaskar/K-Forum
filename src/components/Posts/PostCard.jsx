@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import axios from 'axios';
+import axios from '../../services/axiosSetup';
 import toast from 'react-hot-toast';
-import { ArrowUp, ArrowDown, MessageCircle, Eye, Clock, User, MoreVertical, Flag, Trash2 } from 'lucide-react';
+import { MessageCircle, Eye, Clock, User, MoreVertical, Flag, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 import ImageViewer from '../ImageViewer';
+import PostReactions from './PostReactions';
 import confetti from 'canvas-confetti';
 
 const PostCard = ({ post, onDelete }) => {
@@ -13,6 +14,10 @@ const PostCard = ({ post, onDelete }) => {
   const [showOptions, setShowOptions] = useState(false);
   const [showImageViewer, setShowImageViewer] = useState(false);
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
+  // Bookies voting state
+  const [upvoteCount, setUpvoteCount] = useState(post.upvoteCount || 0);
+  const [downvoteCount, setDownvoteCount] = useState(post.downvoteCount || 0);
+  const [isVoting, setIsVoting] = useState(false);
   const formatTime = (date) => {
     return new Date(date).toLocaleDateString('en-US', {
       month: 'short',
@@ -42,7 +47,7 @@ const PostCard = ({ post, onDelete }) => {
     }
 
     try {
-      await axios.delete(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${post._id}`);
+      await axios.delete(`/api/posts/${post._id}`);
       toast.success('Post deleted successfully');
       if (onDelete) onDelete(post._id);
     } catch (error) {
@@ -65,7 +70,7 @@ const PostCard = ({ post, onDelete }) => {
     }
 
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${post._id}/report`, {
+      await axios.post(`/api/posts/${post._id}/report`, {
         reason: reportReason
       });
       toast.success('Post reported successfully');
@@ -175,13 +180,15 @@ const PostCard = ({ post, onDelete }) => {
                     <Flag className="w-4 h-4" />
                     <span>Report Post</span>
                   </button>
-                  <button
-                    onClick={handleDelete}
-                    className="w-full px-4 py-2 text-left text-red-400 hover:bg-white/5 flex items-center space-x-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    <span>Delete Post</span>
-                  </button>
+                  {user && post.author && (user._id === post.author._id || user.isAdmin) && (
+                    <button
+                      onClick={handleDelete}
+                      className="w-full px-4 py-2 text-left text-red-400 hover:bg-white/5 flex items-center space-x-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      <span>Delete Post</span>
+                    </button>
+                  )}
                 </div>
               )}
             </div>
@@ -198,6 +205,7 @@ const PostCard = ({ post, onDelete }) => {
             {post.content.substring(0, 200)}...
           </p>
         </Link>
+        {console.log('Post attachments:', post._id, post.attachments)}
 
         {/* Image attachments */}
         {post.attachments && post.attachments.length > 0 && (
@@ -206,7 +214,9 @@ const PostCard = ({ post, onDelete }) => {
               <div
                 key={index}
                 className="relative group cursor-pointer aspect-square overflow-hidden rounded-lg"
-                onClick={() => {
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
                   setSelectedImageIndex(index);
                   setShowImageViewer(true);
                 }}
@@ -251,14 +261,73 @@ const PostCard = ({ post, onDelete }) => {
 
       <div className="flex items-center justify-between text-gray-400">
         <div className="flex items-center space-x-4">
-          <div className="flex items-center space-x-1">
-            <ArrowUp className="w-5 h-5" />
-            <span>{post.upvoteCount || 0}</span>
-          </div>
-          <div className="flex items-center space-x-1">
-            <ArrowDown className="w-5 h-5" />
-            <span>{post.downvoteCount || 0}</span>
-          </div>
+          {post.category === 'Bookies' ? (
+            /* Upvote/Downvote for Bookies category */
+            <>
+              <button
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!user) {
+                    toast.error('Please login to vote');
+                    navigate('/login');
+                    return;
+                  }
+                  if (isVoting) return;
+                  setIsVoting(true);
+                  try {
+                    const res = await axios.post(`/api/posts/${post._id}/vote`, { voteType: 'up' });
+                    setUpvoteCount(res.data.upvoteCount);
+                    setDownvoteCount(res.data.downvoteCount);
+                  } catch (error) {
+                    toast.error('Failed to vote');
+                  } finally {
+                    setIsVoting(false);
+                  }
+                }}
+                disabled={isVoting}
+                className={`flex items-center space-x-1 hover:text-green-400 transition-colors ${isVoting ? 'opacity-50' : ''}`}
+              >
+                <ArrowUp className="w-5 h-5" />
+                <span>{upvoteCount}</span>
+              </button>
+              <button
+                onClick={async (e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (!user) {
+                    toast.error('Please login to vote');
+                    navigate('/login');
+                    return;
+                  }
+                  if (isVoting) return;
+                  setIsVoting(true);
+                  try {
+                    const res = await axios.post(`/api/posts/${post._id}/vote`, { voteType: 'down' });
+                    setUpvoteCount(res.data.upvoteCount);
+                    setDownvoteCount(res.data.downvoteCount);
+                  } catch (error) {
+                    toast.error('Failed to vote');
+                  } finally {
+                    setIsVoting(false);
+                  }
+                }}
+                disabled={isVoting}
+                className={`flex items-center space-x-1 hover:text-red-400 transition-colors ${isVoting ? 'opacity-50' : ''}`}
+              >
+                <ArrowDown className="w-5 h-5" />
+                <span>{downvoteCount}</span>
+              </button>
+            </>
+          ) : (
+            /* Reactions for all other categories */
+            <PostReactions
+              postId={post._id}
+              initialCounts={post.reactionCounts || {}}
+              initialUserReaction={post.userReaction || null}
+              totalReactions={post.totalReactions || 0}
+            />
+          )}
           <div className="flex items-center space-x-1">
             <MessageCircle className="w-5 h-5" />
             <span>{post.commentCount || 0}</span>

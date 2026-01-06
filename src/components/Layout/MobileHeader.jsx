@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
-import { Home, Gamepad2, PlusSquare, Search, User, Menu, X, Sparkles, Shield } from 'lucide-react';
+import { Home, Gamepad2, PlusSquare, Search, User, Menu, X, Sparkles, Shield, Calendar, Users } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import TrendingHashtags from '../TrendingHashtags';
 
@@ -20,6 +20,8 @@ const MobileHeader = () => {
     const navItems = [
         { path: '/', icon: Home, label: 'Home' },
         { path: '/create-post', icon: PlusSquare, label: 'Create Post' },
+        { path: '/calendar', icon: Calendar, label: 'Calendar' },
+        { path: '/buddy-connect', icon: Users, label: 'Buddy Connect' },
         { path: '/wordle', icon: Gamepad2, label: 'K-Wordle' },
         { path: '/', icon: Search, label: 'Search' },
         { path: '/profile', icon: User, label: 'Profile' }

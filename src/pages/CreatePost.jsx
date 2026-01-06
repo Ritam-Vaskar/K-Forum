@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from '../services/axiosSetup';
 import toast from 'react-hot-toast';
-import { Send, Tag, Eye, EyeOff, Image, X } from 'lucide-react';
+import { Send, Tag, Eye, EyeOff, Image, X, Calendar } from 'lucide-react';
 
 const CreatePost = () => {
   const [formData, setFormData] = useState({
@@ -11,7 +11,8 @@ const CreatePost = () => {
     content: '',
     category: '',
     tags: '',
-    isAnonymous: false
+    isAnonymous: false,
+    eventDate: ''
   });
   const [selectedImages, setSelectedImages] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
@@ -46,12 +47,14 @@ const CreatePost = () => {
     }
 
     const newImageFiles = files.filter(file => {
-      if (file.size > 10 * 1024 * 1024) { // 10MB
-        toast.error(`${file.name} is too large. Maximum size is 10MB`);
+      // Check Size (Max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error(`${file.name} is too large. Max size is 5MB.`);
         return false;
       }
-      if (!file.type.startsWith('image/')) {
-        toast.error(`${file.name} is not an image`);
+      // Check Type (PNG or JPG/JPEG only)
+      if (!['image/png', 'image/jpeg', 'image/jpg'].includes(file.type)) {
+        toast.error(`"${file.name}" is ignored. Only PNG and JPG images are allowed.`);
         return false;
       }
       return true;
@@ -91,6 +94,9 @@ const CreatePost = () => {
       formDataToSend.append('category', formData.category);
       formDataToSend.append('tags', formData.tags);
       formDataToSend.append('isAnonymous', formData.isAnonymous);
+      if (formData.category === 'events' && formData.eventDate) {
+        formDataToSend.append('eventDate', formData.eventDate);
+      }
 
       imageFiles.forEach(file => {
         formDataToSend.append('images', file);
@@ -202,6 +208,28 @@ const CreatePost = () => {
               </div>
             </div>
 
+
+            {/* Event Date Picker - Only for Events */}
+            {formData.category === 'events' && (
+              <div className="space-y-2 animate-fade-in">
+                <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
+                  Event Date
+                </label>
+                <div className="relative group">
+                  <Calendar className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-500 group-focus-within:text-emerald-500 transition-colors w-5 h-5 pointer-events-none" />
+                  <input
+                    type="date"
+                    name="eventDate"
+                    value={formData.eventDate}
+                    onChange={handleChange}
+                    min={new Date().toISOString().split('T')[0]}
+                    required={formData.category === 'events'}
+                    className="w-full bg-white/5 text-white pl-14 pr-6 py-4 rounded-2xl border border-gray-700/50 focus:border-emerald-500/50 focus:bg-white/10 focus:outline-none transition-all placeholder-gray-600 appearance-none [&::-webkit-calendar-picker-indicator]:invert [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:opacity-50 hover:[&::-webkit-calendar-picker-indicator]:opacity-100"
+                  />
+                </div>
+              </div>
+            )}
+
             {/* Content */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
@@ -286,7 +314,7 @@ const CreatePost = () => {
                     <Image className="w-8 h-8 text-gray-400 group-hover:text-emerald-400 transition-colors" />
                   </div>
                   <span className="text-sm font-medium group-hover:text-emerald-300 transition-colors">Click to upload images</span>
-                  <span className="text-xs text-gray-600 mt-1">JPG, PNG up to 10MB</span>
+                  <span className="text-xs text-gray-600 mt-1">JPG, PNG up to 5MB each</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -344,8 +372,8 @@ const CreatePost = () => {
             </div>
           </form>
         </div>
-      </div>
-    </div>
+      </div >
+    </div >
   );
 };
 

@@ -1,9 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import axios from '../services/axiosSetup';
 import toast from 'react-hot-toast';
-import { ArrowUp, ArrowDown, MessageCircle, Eye, Clock, User, Send, MoreVertical, Flag, Trash2, Image, X } from 'lucide-react';
+import { MessageCircle, Eye, Clock, User, Send, MoreVertical, Flag, Trash2, Image, X, ArrowUp, ArrowDown } from 'lucide-react';
+import PostReactions from '../components/Posts/PostReactions';
+import ImageViewer from '../components/ImageViewer';
 
 const PostDetail = () => {
   const { id } = useParams();
@@ -12,6 +14,10 @@ const PostDetail = () => {
   const [post, setPost] = useState(null);
   const [comments, setComments] = useState([]);
   const [loading, setLoading] = useState(true);
+  // Bookies voting state
+  const [upvoteCount, setUpvoteCount] = useState(0);
+  const [downvoteCount, setDownvoteCount] = useState(0);
+  const [isVoting, setIsVoting] = useState(false);
   const [newComment, setNewComment] = useState('');
   const [isAnonymousComment, setIsAnonymousComment] = useState(false);
   const [submittingComment, setSubmittingComment] = useState(false);
@@ -28,8 +34,11 @@ const PostDetail = () => {
 
   const fetchPost = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}`);
+      const response = await axios.get(`/api/posts/${id}`);
       setPost(response.data);
+      // Initialize vote counts for Bookies
+      setUpvoteCount(response.data.upvoteCount || 0);
+      setDownvoteCount(response.data.downvoteCount || 0);
     } catch (error) {
       console.error('Error fetching post:', error);
       toast.error('Post not found');
@@ -38,7 +47,7 @@ const PostDetail = () => {
 
   const fetchComments = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/comments`);
+      const response = await axios.get(`/api/posts/${id}/comments`);
       setComments(response.data);
     } catch (error) {
       console.error('Error fetching comments:', error);
@@ -54,7 +63,7 @@ const PostDetail = () => {
     }
 
     try {
-      const response = await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/vote`, {
+      const response = await axios.post(`/api/posts/${id}/vote`, {
         voteType
       });
       setPost({
@@ -74,7 +83,7 @@ const PostDetail = () => {
     }
 
     try {
-      await axios.delete(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}`);
+      await axios.delete(`/api/posts/${id}`);
       toast.success('Post deleted successfully');
       navigate('/');
     } catch (error) {
@@ -99,7 +108,7 @@ const PostDetail = () => {
     }
 
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/report`, {
+      await axios.post(`/api/posts/${id}/report`, {
         reason: reportReason
       });
       toast.success('Post reported successfully');
@@ -122,7 +131,7 @@ const PostDetail = () => {
     }
 
     try {
-      await axios.delete(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/comments/${commentId}`);
+      await axios.delete(`/api/posts/${id}/comments/${commentId}`);
       setComments(comments.filter(comment => comment._id !== commentId));
       setPost({
         ...post,
@@ -141,7 +150,7 @@ const PostDetail = () => {
     }
 
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/comments/${commentId}/report`);
+      await axios.post(`/api/posts/${id}/comments/${commentId}/report`);
       toast.success('Comment reported successfully');
       setShowCommentOptions(null);
     } catch (error) {
@@ -197,7 +206,7 @@ const PostDetail = () => {
       });
 
       const response = await axios.post(
-        `${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/posts/${id}/comments`,
+        `/api/posts/${id}/comments`,
         formData,
         {
           headers: {
@@ -339,7 +348,7 @@ const PostDetail = () => {
                         <Flag className="w-4 h-4" />
                         <span>Report Post</span>
                       </button>
-                      {user && (user._id === post.author._id || user.isAdmin) && (
+                      {user && post.author && (user._id === post.author._id || user.isAdmin) && (
                         <button
                           onClick={handleDeletePost}
                           className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 flex items-center space-x-2 rounded-b-lg"
@@ -388,18 +397,19 @@ const PostDetail = () => {
                 ))}
               </div>
             )}
+            {/* Image Viewer */}
+            {showImageViewer && (
+              <ImageViewer
+                images={viewerImages}
+                initialIndex={selectedImageIndex}
+                onClose={() => setShowImageViewer(false)}
+              />
+            )}
           </div>
+        </div>
 
-          {/* Image Viewer Modal */}
-          {showImageViewer && (
-            <ImageViewer
-              images={viewerImages}
-              initialIndex={selectedImageIndex}
-              onClose={() => setShowImageViewer(false)}
-            />
-          )}
-
-          {post.tags && post.tags.length > 0 && (
+        {
+          post.tags && post.tags.length > 0 && (
             <div className="flex flex-wrap gap-2 mb-6">
               {post.tags.map((tag, index) => (
                 <span
@@ -410,38 +420,88 @@ const PostDetail = () => {
                 </span>
               ))}
             </div>
-          )}
+          )
+        }
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-6">
-              <button
-                onClick={() => handleVote('up')}
-                className="flex items-center space-x-2 text-gray-400 hover:text-[#17d059] transition-colors"
-              >
-                <ArrowUp className="w-5 h-5" />
-                <span>{post.upvoteCount || 0}</span>
-              </button>
-              <button
-                onClick={() => handleVote('down')}
-                className="flex items-center space-x-2 text-gray-400 hover:text-red-400 transition-colors"
-              >
-                <ArrowDown className="w-5 h-5" />
-                <span>{post.downvoteCount || 0}</span>
-              </button>
-              <div className="flex items-center space-x-2 text-gray-400">
-                <MessageCircle className="w-5 h-5" />
-                <span>{post.commentCount || 0}</span>
-              </div>
-            </div>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-6">
+            {post.category === 'Bookies' ? (
+              /* Upvote/Downvote for Bookies */
+              <>
+                <button
+                  onClick={async () => {
+                    if (!user) {
+                      toast.error('Please login to vote');
+                      navigate('/login');
+                      return;
+                    }
+                    if (isVoting) return;
+                    setIsVoting(true);
+                    try {
+                      const res = await axios.post(`/api/posts/${post._id}/vote`, { voteType: 'up' });
+                      setUpvoteCount(res.data.upvoteCount);
+                      setDownvoteCount(res.data.downvoteCount);
+                    } catch (error) {
+                      toast.error('Failed to vote');
+                    } finally {
+                      setIsVoting(false);
+                    }
+                  }}
+                  disabled={isVoting}
+                  className={`flex items-center space-x-2 text-gray-400 hover:text-green-400 transition-colors ${isVoting ? 'opacity-50' : ''}`}
+                >
+                  <ArrowUp className="w-5 h-5" />
+                  <span>{upvoteCount}</span>
+                </button>
+                <button
+                  onClick={async () => {
+                    if (!user) {
+                      toast.error('Please login to vote');
+                      navigate('/login');
+                      return;
+                    }
+                    if (isVoting) return;
+                    setIsVoting(true);
+                    try {
+                      const res = await axios.post(`/api/posts/${post._id}/vote`, { voteType: 'down' });
+                      setUpvoteCount(res.data.upvoteCount);
+                      setDownvoteCount(res.data.downvoteCount);
+                    } catch (error) {
+                      toast.error('Failed to vote');
+                    } finally {
+                      setIsVoting(false);
+                    }
+                  }}
+                  disabled={isVoting}
+                  className={`flex items-center space-x-2 text-gray-400 hover:text-red-400 transition-colors ${isVoting ? 'opacity-50' : ''}`}
+                >
+                  <ArrowDown className="w-5 h-5" />
+                  <span>{downvoteCount}</span>
+                </button>
+              </>
+            ) : (
+              <PostReactions
+                postId={post._id}
+                initialCounts={post.reactionCounts || {}}
+                initialUserReaction={post.userReaction || null}
+                totalReactions={post.totalReactions || 0}
+              />
+            )}
             <div className="flex items-center space-x-2 text-gray-400">
-              <Eye className="w-5 h-5" />
-              <span>{post.viewCount || 0}</span>
+              <MessageCircle className="w-5 h-5" />
+              <span>{post.commentCount || 0}</span>
             </div>
           </div>
+          <div className="flex items-center space-x-2 text-gray-400">
+            <Eye className="w-5 h-5" />
+            <span>{post.viewCount || 0}</span>
+          </div>
         </div>
+      </div >
 
-        {/* Add Comment */}
-        {user && (
+      {/* Add Comment */}
+      {
+        user && (
           <div className="glass-panel rounded-2xl p-4 sm:p-6 mb-8">
             <h3 className="text-lg font-semibold text-white mb-4">Add a Comment</h3>
             <form onSubmit={handleCommentSubmit}>
@@ -516,106 +576,106 @@ const PostDetail = () => {
               </div>
             </form>
           </div>
-        )}
+        )
+      }
 
-        {/* Comments */}
-        <div className="space-y-4">
-          <h3 className="text-xl font-semibold text-white">
-            Comments ({comments.length})
-          </h3>
-          {comments.length === 0 ? (
-            <div className="glass-card rounded-2xl p-8 text-center">
-              <MessageCircle className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-              <p className="text-gray-400">No comments yet. Be the first to comment!</p>
-            </div>
-          ) : (
-            comments.map((comment) => (
-              <div key={comment._id} className="glass-card rounded-2xl p-4 sm:p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-start space-x-3">
-                    <div className="w-10 h-10 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
-                      <User className="w-5 h-5 text-white" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center space-x-2 mb-2">
-                        <p className="text-white font-medium">
-                          {comment.author ? `${comment.author.name} (${comment.author.studentId})` : 'Anonymous'}
-                        </p>
-                        <span className="text-gray-400 text-sm">
-                          {formatTime(comment.createdAt)}
-                        </span>
-                      </div>
-                      <p className="text-gray-300 whitespace-pre-wrap">{comment.content}</p>
-
-                      {/* Comment Image Attachments */}
-                      {comment.attachments && comment.attachments.length > 0 && (
-                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4 mb-3">
-                          {comment.attachments.map((attachment, idx) => (
-                            <div
-                              key={idx}
-                              className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group border border-white/5 hover:border-emerald-500/30 transition-all"
-                              onClick={() => {
-                                setViewerImages(comment.attachments.map(a => a.url));
-                                setSelectedImageIndex(idx);
-                                setShowImageViewer(true);
-                              }}
-                            >
-                              <img src={attachment.url} alt="comment-img" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                              <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                                <Eye className="w-5 h-5 text-white" />
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-
-                      <div className="flex items-center space-x-4 mt-3">
-                        <div className="flex items-center space-x-1 text-gray-400">
-                          <ArrowUp className="w-4 h-4" />
-                          <span>{comment.upvoteCount || 0}</span>
-                        </div>
-                        <div className="flex items-center space-x-1 text-gray-400">
-                          <ArrowDown className="w-4 h-4" />
-                          <span>{comment.downvoteCount || 0}</span>
-                        </div>
-                      </div>
-                    </div>
+      {/* Comments */}
+      <div className="space-y-4">
+        <h3 className="text-xl font-semibold text-white">
+          Comments ({comments.length})
+        </h3>
+        {comments.length === 0 ? (
+          <div className="glass-card rounded-2xl p-8 text-center">
+            <MessageCircle className="w-12 h-12 text-gray-600 mx-auto mb-4" />
+            <p className="text-gray-400">No comments yet. Be the first to comment!</p>
+          </div>
+        ) : (
+          comments.map((comment) => (
+            <div key={comment._id} className="glass-card rounded-2xl p-4 sm:p-6">
+              <div className="flex items-start justify-between">
+                <div className="flex items-start space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center flex-shrink-0">
+                    <User className="w-5 h-5 text-white" />
                   </div>
-                  <div className="relative">
-                    <button
-                      onClick={() => setShowCommentOptions(showCommentOptions === comment._id ? null : comment._id)}
-                      className="p-1 hover:bg-white/5 rounded-full transition-colors"
-                    >
-                      <MoreVertical className="w-4 h-4 text-gray-400" />
-                    </button>
-                    {showCommentOptions === comment._id && (
-                      <div className="absolute right-0 mt-2 w-48 glass-panel rounded-xl shadow-2xl border border-white/10 z-50 overflow-hidden">
-                        <button
-                          onClick={() => handleReportComment(comment._id)}
-                          className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 flex items-center space-x-2"
-                        >
-                          <Flag className="w-4 h-4" />
-                          <span>Report Comment</span>
-                        </button>
-                        {user && (user._id === (comment.author?._id) || user.isAdmin) && (
-                          <button
-                            onClick={() => handleDeleteComment(comment._id)}
-                            className="w-full px-4 py-2 text-left text-red-400 hover:bg-white/5 flex items-center space-x-2"
+                  <div className="flex-1">
+                    <div className="flex items-center space-x-2 mb-2">
+                      <p className="text-white font-medium">
+                        {comment.author ? `${comment.author.name} (${comment.author.studentId})` : 'Anonymous'}
+                      </p>
+                      <span className="text-gray-400 text-sm">
+                        {formatTime(comment.createdAt)}
+                      </span>
+                    </div>
+                    <p className="text-gray-300 whitespace-pre-wrap">{comment.content}</p>
+
+                    {/* Comment Image Attachments */}
+                    {comment.attachments && comment.attachments.length > 0 && (
+                      <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-4 mb-3">
+                        {comment.attachments.map((attachment, idx) => (
+                          <div
+                            key={idx}
+                            className="relative aspect-square rounded-xl overflow-hidden cursor-pointer group border border-white/5 hover:border-emerald-500/30 transition-all"
+                            onClick={() => {
+                              setViewerImages(comment.attachments.map(a => a.url));
+                              setSelectedImageIndex(idx);
+                              setShowImageViewer(true);
+                            }}
                           >
-                            <Trash2 className="w-4 h-4" />
-                            <span>Delete Comment</span>
-                          </button>
-                        )}
+                            <img src={attachment.url} alt="comment-img" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
+                            <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                              <Eye className="w-5 h-5 text-white" />
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     )}
+
+                    <div className="flex items-center space-x-4 mt-3">
+                      <div className="flex items-center space-x-1 text-gray-400">
+                        <ArrowUp className="w-4 h-4" />
+                        <span>{comment.upvoteCount || 0}</span>
+                      </div>
+                      <div className="flex items-center space-x-1 text-gray-400">
+                        <ArrowDown className="w-4 h-4" />
+                        <span>{comment.downvoteCount || 0}</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+                <div className="relative">
+                  <button
+                    onClick={() => setShowCommentOptions(showCommentOptions === comment._id ? null : comment._id)}
+                    className="p-1 hover:bg-white/5 rounded-full transition-colors"
+                  >
+                    <MoreVertical className="w-4 h-4 text-gray-400" />
+                  </button>
+                  {showCommentOptions === comment._id && (
+                    <div className="absolute right-0 mt-2 w-48 glass-panel rounded-xl shadow-2xl border border-white/10 z-50 overflow-hidden">
+                      <button
+                        onClick={() => handleReportComment(comment._id)}
+                        className="w-full px-4 py-2 text-left text-gray-300 hover:bg-white/5 flex items-center space-x-2"
+                      >
+                        <Flag className="w-4 h-4" />
+                        <span>Report Comment</span>
+                      </button>
+                      {user && (user._id === (comment.author?._id) || user.isAdmin) && (
+                        <button
+                          onClick={() => handleDeleteComment(comment._id)}
+                          className="w-full px-4 py-2 text-left text-red-400 hover:bg-white/5 flex items-center space-x-2"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                          <span>Delete Comment</span>
+                        </button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
-            ))
-          )}
-        </div>
+            </div>
+          ))
+        )}
       </div>
-    </div>
+    </div >
   );
 };
 

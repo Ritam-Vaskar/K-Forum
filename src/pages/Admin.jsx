@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import axios from 'axios';
+import axios from '../services/axiosSetup';
 import { Shield, Users, MessageSquare, AlertTriangle, TrendingUp, Eye, CheckCircle, XCircle, Gamepad2, Plus, Calendar, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -27,7 +27,7 @@ const Admin = () => {
 
   const fetchStats = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/admin/stats`);
+      const response = await axios.get('/api/admin/stats');
       setStats(response.data);
     } catch (error) {
       console.error('Error fetching stats:', error);
@@ -36,7 +36,7 @@ const Admin = () => {
 
   const fetchReportedPosts = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/admin/reported-posts`);
+      const response = await axios.get('/api/admin/reported-posts');
       setReportedPosts(response.data);
     } catch (error) {
       console.error('Error fetching reported posts:', error);
@@ -45,7 +45,7 @@ const Admin = () => {
 
   const fetchFlaggedPosts = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/admin/flagged-posts`);
+      const response = await axios.get('/api/admin/flagged-posts');
       setFlaggedPosts(response.data || []);
     } catch (error) {
       console.error('Error fetching flagged posts:', error);
@@ -57,7 +57,7 @@ const Admin = () => {
 
   const fetchWordleWords = async () => {
     try {
-      const response = await axios.get(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/wordle/admin/words`);
+      const response = await axios.get('/api/wordle/admin/words');
       setWordleWords(response.data);
     } catch (error) {
       console.error('Error fetching wordle words:', error);
@@ -66,7 +66,7 @@ const Admin = () => {
 
   const handleModeratePost = async (postId, action) => {
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/admin/moderate-post/${postId}`, { action });
+      await axios.post(`/api/admin/moderate-post/${postId}`, { action });
       toast.success(`Post ${action}d successfully`);
       fetchReportedPosts();
       fetchFlaggedPosts();
@@ -84,7 +84,7 @@ const Admin = () => {
     }
 
     try {
-      await axios.post(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/wordle/admin/set-word`, {
+      await axios.post('/api/wordle/admin/set-word', {
         word: newWord.toUpperCase(),
         date: newWordDate || undefined,
         hint: newWordHint || undefined
@@ -104,7 +104,7 @@ const Admin = () => {
     if (!confirm('Are you sure you want to delete this word?')) return;
 
     try {
-      await axios.delete(`${import.meta.env.VITE_BACKEND_API || 'http://localhost:5001'}/api/wordle/admin/words/${wordId}`);
+      await axios.delete(`/api/wordle/admin/words/${wordId}`);
       toast.success('Word deleted');
       fetchWordleWords();
     } catch (error) {
@@ -311,6 +311,27 @@ const Admin = () => {
                           {post.moderationStatus.toUpperCase()}
                         </span>
                       </div>
+
+                      {/* Display Report Reasons */}
+                      {post.reports && post.reports.length > 0 && (
+                        <div className="mb-4 bg-gray-900/50 rounded-lg p-4 border border-gray-700">
+                          <h4 className="text-sm font-semibold text-orange-400 mb-3 flex items-center">
+                            <AlertTriangle className="w-4 h-4 mr-2" />
+                            Report Reasons:
+                          </h4>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {post.reports.map((report, index) => (
+                              <div key={index} className="bg-gray-800/50 rounded-lg p-3 border border-gray-700/50">
+                                <p className="text-gray-300 text-sm">"{report.reason}"</p>
+                                <p className="text-gray-500 text-xs mt-1">
+                                  — Reported by {report.user?.name || 'Anonymous'}
+                                  {report.reportedAt && ` on ${new Date(report.reportedAt).toLocaleDateString()}`}
+                                </p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
 
                       <div className="flex items-center space-x-3">
                         <button

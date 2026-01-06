@@ -50,6 +50,22 @@ const postSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+  // Facebook-style reactions
+  reactions: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    type: {
+      type: String,
+      enum: ['like', 'love', 'haha', 'wow', 'sad', 'angry'],
+      required: true
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
   commentCount: {
     type: Number,
     default: 0
@@ -99,6 +115,12 @@ const postSchema = new mongoose.Schema({
     type: String,
     enum: ['PUBLISHED', 'PENDING_REVIEW', 'REJECTED'],
     default: 'PENDING_REVIEW',
+    index: true
+  },
+
+  // Event Date (for 'events' category)
+  eventDate: {
+    type: Date,
     index: true
   },
 

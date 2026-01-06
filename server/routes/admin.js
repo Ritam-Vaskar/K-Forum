@@ -160,21 +160,48 @@ router.get('/reported-posts', auth, isAdmin, async (req, res) => {
 });
 
 // ============================================
-// GET FLAGGED POSTS (legacy endpoint)
+// GET AI FLAGGED POSTS (only AI moderation flagged, NOT user reports)
 // ============================================
 router.get('/flagged-posts', auth, isAdmin, async (req, res) => {
   try {
+    // Only get posts that were flagged by AI moderation, NOT by user reports
     const posts = await Post.find({
-      $or: [
-        { moderationStatus: 'flagged' },
-        { status: 'PENDING_REVIEW' },
-        { 'moderation.isUnsafe': true }
+      $and: [
+        // Must be flagged by AI or pending review
+        {
+          $or: [
+            { 'moderation.isUnsafe': true },
+            { status: 'PENDING_REVIEW', 'moderation.isUnsafe': true }
+          ]
+        },
+        // Exclude posts that have user reports (those go to reported-posts)
+        {
+          $or: [
+            { reports: { $exists: false } },
+            { reports: { $size: 0 } }
+          ]
+        },
+        // Not already approved or rejected
+        { status: { $ne: 'REJECTED' } }
       ]
     })
       .populate('author', 'name studentId')
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 })
+      .lean();
 
-    res.json(posts);
+    // Add moderation info for admin UI
+    const formattedPosts = posts.map(post => ({
+      ...post,
+      moderationInfo: {
+        confidence: post.moderation?.confidence || 0,
+        confidencePercent: Math.round((post.moderation?.confidence || 0) * 100),
+        categories: post.moderation?.categories || [],
+        flaggedWords: post.moderation?.flaggedWords || [],
+        isUnsafe: post.moderation?.isUnsafe || false
+      }
+    }));
+
+    res.json(formattedPosts);
   } catch (error) {
     console.error('Get flagged posts error:', error);
     res.status(500).json({ message: 'Server error' });

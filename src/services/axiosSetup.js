@@ -5,10 +5,7 @@ import toast from 'react-hot-toast';
 const API_BASE_URL = import.meta.env.VITE_BACKEND_API || 'http://localhost:5001';
 
 const api = axios.create({
-    baseURL: API_BASE_URL,
-    headers: {
-        'Content-Type': 'application/json'
-    }
+    baseURL: API_BASE_URL
 });
 
 let isOfflineNotified = false;
@@ -80,6 +77,10 @@ api.interceptors.response.use(
                     }
 
                     if (method === 'post') {
+                        // DISABLE MOCK FALLBACK for debugging
+                        return Promise.reject(error);
+
+                        /*
                         let postData = {};
                         if (config.data instanceof FormData) {
                             postData = {
@@ -93,9 +94,17 @@ api.interceptors.response.use(
                             postData = typeof config.data === 'string' ? JSON.parse(config.data) : config.data;
                         }
                         const result = await mockApi.createPost(postData);
-                        return { data: result, status: 200 };
+                        return { 
+                            data: { 
+                                post: result,
+                                message: 'Post created (Offline Mode)',
+                                moderationStatus: 'approved'
+                            }, 
+                            status: 200 
+                        };
+                        */
                     }
-                }
+                } // Close if (url.includes('/posts'))
 
             } catch (mockError) {
                 return Promise.reject(mockError);

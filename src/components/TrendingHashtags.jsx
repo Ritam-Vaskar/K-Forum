@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
+import axios from '../services/axiosSetup';
 import { TrendingUp, Hash } from 'lucide-react';
 
 const TrendingHashtags = ({ onTagClick }) => {

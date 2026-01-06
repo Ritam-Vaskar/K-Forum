@@ -50,6 +50,40 @@ export const auth = async (req, res, next) => {
   }
 };
 
+// Optional auth - doesn't require authentication but sets userId if token is valid
+export const optionalAuth = async (req, res, next) => {
+  try {
+    const token = req.header('Authorization')?.replace('Bearer ', '');
+
+    if (!token) {
+      return next(); // No token, continue without user context
+    }
+
+    // Handle demo token
+    if (token === 'dummy-demo-token') {
+      const dummyUser = await User.findOne({ email: 'dummy@kiit.ac.in' });
+      if (dummyUser) {
+        req.userId = dummyUser._id;
+        req.userRole = dummyUser.role;
+      }
+      return next();
+    }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'K-Forum-secret');
+    const user = await User.findById(decoded.userId);
+
+    if (user) {
+      req.userId = user._id;
+      req.userRole = user.role;
+    }
+
+    next();
+  } catch (error) {
+    // Token invalid, continue without user context
+    next();
+  }
+};
+
 export const isAdmin = async (req, res, next) => {
   try {
     const user = await User.findById(req.userId);
