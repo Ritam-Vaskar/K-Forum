@@ -26,6 +26,9 @@ const PostReactions = ({ postId, initialCounts = {}, initialUserReaction = null,
     const longPressTimer = useRef(null);
     const [isLongPress, setIsLongPress] = useState(false);
 
+    // Hover delay timer to prevent picker from disappearing too quickly
+    const hoverTimer = useRef(null);
+
     // Update state when props change (e.g., after page reload)
     useEffect(() => {
         setUserReaction(initialUserReaction);
@@ -102,8 +105,20 @@ const PostReactions = ({ postId, initialCounts = {}, initialUserReaction = null,
                 {/* Reaction button */}
                 <div
                     className="relative"
-                    onMouseEnter={() => setShowPicker(true)}
-                    onMouseLeave={() => setShowPicker(false)}
+                    onMouseEnter={() => {
+                        // Clear any pending hide timer
+                        if (hoverTimer.current) {
+                            clearTimeout(hoverTimer.current);
+                            hoverTimer.current = null;
+                        }
+                        setShowPicker(true);
+                    }}
+                    onMouseLeave={() => {
+                        // Add delay before hiding picker
+                        hoverTimer.current = setTimeout(() => {
+                            setShowPicker(false);
+                        }, 300); // 300ms delay
+                    }}
                 >
                     <button
                         onClick={() => {

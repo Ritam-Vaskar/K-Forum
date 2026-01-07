@@ -21,7 +21,7 @@ const MainLayout = ({ children }) => {
             <main className={`
                 relative z-10 
                 pt-[120px] md:pt-8 
-                px-4 md:px-12 
+                px-4 md:px-8 
                 pb-24 md:pb-8
                 min-h-screen
                 transition-all duration-300 ease-in-out

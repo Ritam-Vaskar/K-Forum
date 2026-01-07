@@ -283,7 +283,7 @@ const Home = () => {
         </div>
 
         {/* Main Feed Column */}
-        <div className="lg:col-span-6">
+        <div className="lg:col-span-5">
 
 
 
@@ -339,14 +339,14 @@ const Home = () => {
         </div>
 
         {/* Right Column: Trending (Sticky) */}
-        <div className="hidden lg:block lg:col-span-3">
+        <div className="hidden lg:block lg:col-span-4">
           <div className="sticky top-24 space-y-6">
 
             {/* Event Calendar */}
             <EventCalendar />
 
             {/* Trending Hashtags */}
-            <div className="glass-panel rounded-3xl p-6">
+            <div className="glass-panel rounded-3xl p-6 w-[250px] min-w-[250px]">
               <TrendingHashtags onTagClick={(tag) => {
                 setSearchTerm(`#${tag}`);
                 setPage(1);
