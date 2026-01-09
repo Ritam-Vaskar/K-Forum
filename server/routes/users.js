@@ -23,17 +23,119 @@ const upload = multer({
 
 const router = express.Router();
 
+// Get suggested users for buddy connect
+router.get('/suggestions', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId);
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    const excludeIds = [user._id, ...user.connections, ...user.connectionRequests.map(r => r.user)];
+
+    // Find random users not in exclude list
+    const suggestions = await User.aggregate([
+      { $match: { _id: { $nin: excludeIds } } },
+      { $sample: { size: 5 } },
+      { $project: { name: 1, avatar: 1, studentId: 1, branch: 1, year: 1 } }
+    ]);
+
+    res.json(suggestions);
+  } catch (error) {
+    console.error('Get suggestions error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Get connections
+router.get('/connections', auth, async (req, res) => {
+  try {
+    const user = await User.findById(req.userId).populate('connections', 'name avatar studentId branch year');
+    res.json(user.connections);
+  } catch (error) {
+    console.error('Get connections error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Send connection request
+router.post('/connect/:userId', auth, async (req, res) => {
+  try {
+    const { userId } = req.params;
+    if (userId === req.userId.toString()) {
+      return res.status(400).json({ message: 'Cannot connect with yourself' });
+    }
+
+    const targetUser = await User.findById(userId);
+    if (!targetUser) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if already requested or connected
+    const existingRequest = targetUser.connectionRequests.find(
+      r => r.user.toString() === req.userId
+    );
+    const isConnected = targetUser.connections.includes(req.userId);
+
+    if (existingRequest || isConnected) {
+      return res.status(400).json({ message: 'Request already sent or connected' });
+    }
+
+    // Add request to target user
+    targetUser.connectionRequests.push({
+      user: req.userId,
+      status: 'pending'
+    });
+    await targetUser.save();
+
+    res.json({ message: 'Connection request sent' });
+  } catch (error) {
+    console.error('Connect error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Accept connection request
+router.post('/connect/:userId/accept', auth, async (req, res) => {
+  try {
+    const { userId } = req.params; // ID of the user who sent the request
+    const user = await User.findById(req.userId);
+
+    // Find request
+    const requestIndex = user.connectionRequests.findIndex(
+      r => r.user.toString() === userId && r.status === 'pending'
+    );
+
+    if (requestIndex === -1) {
+      return res.status(404).json({ message: 'Request not found' });
+    }
+
+    // Add to connections for both
+    user.connections.push(userId);
+    user.connectionRequests[requestIndex].status = 'accepted';
+
+    const requester = await User.findById(userId);
+    requester.connections.push(req.userId);
+
+    await user.save();
+    await requester.save();
+
+    res.json({ message: 'Connection accepted' });
+  } catch (error) {
+    console.error('Accept connection error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
 // Get user profile
 router.get('/:id', async (req, res) => {
   try {
     const user = await User.findById(req.params.id)
       .select('-password -verificationOTP -otpExpires');
-    
+
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    const postCount = await Post.countDocuments({ 
+    const postCount = await Post.countDocuments({
       author: user._id,
       moderationStatus: 'approved'
     });
@@ -66,7 +168,7 @@ router.put('/profile', auth, upload.single('avatar'), async (req, res) => {
         return res.status(400).json({ message: 'Failed to upload avatar' });
       }
     }
-    
+
     const user = await User.findByIdAndUpdate(
       req.userId,
       updateData,
@@ -84,18 +186,18 @@ router.put('/profile', auth, upload.single('avatar'), async (req, res) => {
 router.get('/:id/posts', async (req, res) => {
   try {
     const { page = 1, limit = 10 } = req.query;
-    
-    const posts = await Post.find({ 
+
+    const posts = await Post.find({
       author: req.params.id,
       moderationStatus: 'approved',
       isAnonymous: false // Only show non-anonymous posts on profile
     })
-    .populate('author', 'name studentId year branch')
-    .sort({ createdAt: -1 })
-    .limit(limit * 1)
-    .skip((page - 1) * limit);
+      .populate('author', 'name studentId year branch')
+      .sort({ createdAt: -1 })
+      .limit(limit * 1)
+      .skip((page - 1) * limit);
 
-    const total = await Post.countDocuments({ 
+    const total = await Post.countDocuments({
       author: req.params.id,
       moderationStatus: 'approved',
       isAnonymous: false

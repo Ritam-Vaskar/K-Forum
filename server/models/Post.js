@@ -24,7 +24,7 @@ const postSchema = new mongoose.Schema({
   category: {
     type: String,
     required: true,
-    enum: ['academics', 'events', 'rants', 'internships', 'lost-found', 'clubs', 'general']
+    enum: ['academics', 'events', 'rants', 'internships', 'lost-found', 'clubs', 'general', 'Bookies']
   },
   tags: [{
     type: String,
@@ -44,6 +44,22 @@ const postSchema = new mongoose.Schema({
     user: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'User'
+    },
+    createdAt: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  // Facebook-style reactions
+  reactions: [{
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    type: {
+      type: String,
+      enum: ['like', 'love', 'haha', 'wow', 'sad', 'angry'],
+      required: true
     },
     createdAt: {
       type: Date,
@@ -93,6 +109,56 @@ const postSchema = new mongoose.Schema({
       default: Date.now
     }
   }],
+
+  // --- NEW: Enhanced Moderation System ---
+  status: {
+    type: String,
+    enum: ['PUBLISHED', 'PENDING_REVIEW', 'REJECTED'],
+    default: 'PENDING_REVIEW',
+    index: true
+  },
+
+  // Event Date (for 'events' category)
+  eventDate: {
+    type: Date,
+    index: true
+  },
+
+  moderation: {
+    isUnsafe: {
+      type: Boolean,
+      default: false
+    },
+    confidence: {
+      type: Number,
+      default: 0
+    },
+    categories: [{
+      type: String
+    }],
+    flaggedWords: [{
+      type: String
+    }],
+    language: {
+      type: String,
+      default: 'unknown'
+    }
+  },
+
+  adminDecision: {
+    decision: {
+      type: String,
+      enum: ['APPROVED', 'REJECTED']
+    },
+    adminId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    },
+    reviewedAt: Date,
+    reason: String
+  },
+
+  // Keep old field for backward compatibility
   moderationStatus: {
     type: String,
     enum: ['pending', 'approved', 'flagged', 'removed'],

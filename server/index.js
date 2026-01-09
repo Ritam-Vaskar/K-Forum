@@ -8,6 +8,7 @@ import authRoutes from './routes/auth.js';
 import postRoutes from './routes/posts.js';
 import userRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
+import wordleRoutes from './routes/wordle.js';
 
 dotenv.config();
 
@@ -58,13 +59,14 @@ app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/wordle', wordleRoutes);
 
 // Health Check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'K-Forum API is running!' });
 });
 
-const PORT = process.env.PORT || 5001;
+const PORT = 5001; // Force 5001 to avoid conflict with stuck process on 5000
 server.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
 });

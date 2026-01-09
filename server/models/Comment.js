@@ -60,7 +60,23 @@ const commentSchema = new mongoose.Schema({
     type: String,
     enum: ['pending', 'approved', 'flagged', 'removed'],
     default: 'approved'
-  }
+  },
+  attachments: [{
+    url: {
+      type: String,
+      required: true,
+      trim: true
+    },
+    type: {
+      type: String,
+      required: true,
+      enum: ['image']
+    },
+    filename: {
+      type: String,
+      required: true
+    }
+  }]
 }, {
   timestamps: true
 });

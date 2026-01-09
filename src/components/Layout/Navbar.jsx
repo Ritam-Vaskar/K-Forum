@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
-import { Menu, X, Plus, User, LogOut, Shield } from 'lucide-react';
+import { Menu, X, Plus, User, LogOut, Shield, Gamepad2, Flame } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,6 +38,17 @@ const Navbar = () => {
               </Link>
               {user ? (
                 <>
+                  {/* Wordle Button - Featured */}
+                  <Link
+                    to="/wordle"
+                    className="relative bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600 text-white px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-2 transition-all shadow-lg shadow-amber-500/20 hover:shadow-amber-500/40"
+                  >
+                    <Gamepad2 className="w-4 h-4" />
+                    <span>Wordle</span>
+                    <Flame className="w-3 h-3 absolute -top-1 -right-1 text-yellow-300 animate-pulse" />
+                  </Link>
+
+                  {/* Create Post Button */}
                   <Link
                     to="/create-post"
                     className="bg-[#17d059] hover:bg-[#15b84f] text-white px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-1 transition-colors"
@@ -46,7 +57,7 @@ const Navbar = () => {
                     <span>Create Post</span>
                   </Link>
                   <Link
-                    to={`/profile/${user.id}`}
+                    to="/profile"
                     className="text-gray-300 hover:text-white px-3 py-2 rounded-md text-sm font-medium transition-colors"
                   >
                     Profile
@@ -112,6 +123,16 @@ const Navbar = () => {
             </Link>
             {user ? (
               <>
+                {/* Wordle Button Mobile */}
+                <Link
+                  to="/wordle"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium bg-gradient-to-r from-amber-500 to-orange-500 text-white"
+                  onClick={() => setIsOpen(false)}
+                >
+                  <Gamepad2 className="w-5 h-5" />
+                  <span>Play Wordle</span>
+                  <Flame className="w-4 h-4 text-yellow-300 animate-pulse" />
+                </Link>
                 <Link
                   to="/create-post"
                   className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
@@ -120,7 +141,7 @@ const Navbar = () => {
                   Create Post
                 </Link>
                 <Link
-                  to={`/profile/${user.id}`}
+                  to="/profile"
                   className="text-gray-300 hover:text-white block px-3 py-2 rounded-md text-base font-medium"
                   onClick={() => setIsOpen(false)}
                 >
