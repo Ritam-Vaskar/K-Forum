@@ -73,6 +73,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/wordle', wordleRoutes);
 
+
 // Health Check
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'K-Forum API is running!' });
@@ -80,12 +81,9 @@ app.get('/api/health', (req, res) => {
 
 const PORT = process.env.PORT || 5001;
 
-// Only listen if the file is run directly (not imported)
-import { fileURLToPath } from 'url';
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
-  server.listen(PORT, () => {
-    console.log(`🚀 Server running on port ${PORT}`);
-  });
-}
+// Start server - bind to 0.0.0.0 for Railway/cloud deployments
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`🚀 Server running on port ${PORT}`);
+});
 
 export default app;
