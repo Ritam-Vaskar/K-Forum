@@ -115,7 +115,7 @@ const EventCalendar = () => {
                 ))}
                 {Array(daysInMonth).fill(null).map((_, i) => {
                     const day = i + 1;
-                    const dayEvents = events.filter(e => {
+                    const dayEvents = (events || []).filter(e => {
                         const d = new Date(e.eventDate);
                         return d.getDate() === day && d.getMonth() === currentDate.getMonth() && d.getFullYear() === currentDate.getFullYear();
                     });
