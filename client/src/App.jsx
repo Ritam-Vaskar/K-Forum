@@ -94,6 +94,7 @@ function App() {
       <SocketProvider>
         <Router>
           <ScrollToTop />
+          <Toaster position="top-right" />
           <MainContainer />
         </Router>
       </SocketProvider>
