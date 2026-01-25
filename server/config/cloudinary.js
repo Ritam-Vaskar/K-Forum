@@ -3,6 +3,18 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+// Check if Cloudinary is configured
+const isCloudinaryConfigured = process.env.CLOUDINARY_CLOUD_NAME &&
+  process.env.CLOUDINARY_API_KEY &&
+  process.env.CLOUDINARY_API_SECRET;
+
+if (!isCloudinaryConfigured) {
+  console.warn('⚠️ WARNING: Cloudinary is NOT configured! Image uploads will fail.');
+  console.warn('   Please add CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET to your .env file');
+} else {
+  console.log('✅ Cloudinary configured for:', process.env.CLOUDINARY_CLOUD_NAME);
+}
+
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,

@@ -30,13 +30,13 @@ router.post('/register', async (req, res) => {
     const { name, email, password, studentId, year, branch } = req.body;
 
     // Check if user exists
-    const existingUser = await User.findOne({ 
-      $or: [{ email }, { studentId }] 
+    const existingUser = await User.findOne({
+      $or: [{ email }, { studentId }]
     });
-    
+
     if (existingUser) {
-      return res.status(400).json({ 
-        message: 'User with this email or student ID already exists' 
+      return res.status(400).json({
+        message: 'User with this email or student ID already exists'
       });
     }
 
@@ -135,6 +135,26 @@ router.post('/verify-otp', async (req, res) => {
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
+    console.log(`Login attempt for email: ${email}`);
+
+    // Demo Login Logic
+    if (email === 'dummy@kiit.ac.in' && password === 'dummy123') {
+      let dummyUser = await User.findOne({ email });
+      if (!dummyUser) {
+        dummyUser = new User({
+          name: 'Demo User',
+          email: 'dummy@kiit.ac.in',
+          password: 'dummy123',
+          studentId: '9999999',
+          year: 4,
+          branch: 'CSE',
+          isVerified: true,
+          role: 'student'
+        });
+        await dummyUser.save();
+        console.log('Dummy user created');
+      }
+    }
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -150,7 +170,7 @@ router.post('/login', async (req, res) => {
       // Generate new OTP for unverified users
       const otp = generateOTP();
       const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
-      
+
       user.verificationOTP = otp;
       user.otpExpires = otpExpires;
       await user.save();
@@ -210,7 +230,15 @@ router.post('/login', async (req, res) => {
 router.get('/me', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId).select('-password');
-    res.json(user);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Return user with id field for frontend consistency
+    res.json({
+      ...user.toObject(),
+      id: user._id
+    });
   } catch (error) {
     console.error('Get user error:', error);
     res.status(500).json({ message: 'Server error' });
