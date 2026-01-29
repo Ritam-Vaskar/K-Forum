@@ -151,20 +151,20 @@ router.post('/login', async (req, res) => {
       await user.save();
 
       // Send new OTP email
-      await resend.emails.send({
-        from: 'K-Forum <onboarding@resend.dev>',
-        to: email,
-        subject: 'K-Forum Email Verification',
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-            <h2 style="color: #17d059;">Email Verification Required</h2>
-            <p>Your verification code is:</p>
-            <h1 style="color: #17d059; font-size: 32px; letter-spacing: 5px;">${otp}</h1>
-            <p>This code will expire in 10 minutes.</p>
-            <p>Please verify your email to access your account.</p>
-          </div>
-        `
-      });emailService.sendReVerificationEmail(email, otp
+      await emailService.sendReVerificationEmail(email, otp);
+
+      return res.status(403).json({
+        message: 'Please verify your email. A new verification code has been sent.',
+        userId: user._id,
+        requiresVerification: true
+      });
+    }
+
+    const token = jwt.sign(
+      { userId: user._id },
+      process.env.JWT_SECRET || 'K-Forum-secret',
+      { expiresIn: '7d' }
+    );
 
     res.json({
       message: 'Login successful',
@@ -222,20 +222,20 @@ router.post('/forgot-password', async (req, res) => {
     user.otpExpires = otpExpires;
     await user.save();
 
-    await resend.emails.send({
-      from: 'K-Forum <onboarding@resend.dev>',
-      to: email,
-      subject: 'K-Forum Password Reset',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #17d059;">Password Reset Request</h2>
-          <p>Your password reset code is:</p>
-          <h1 style="color: #17d059; font-size: 32px; letter-spacing: 5px;">${otp}</h1>
-          <p>This code will expire in 10 minutes.</p>
-          <p>If you didn't request this reset, please ignore this email.</p>
-        </div>
-      `
-    });emailService.sendPasswordResetEmail(email, otpr.post('/reset-password', async (req, res) => {
+    await emailService.sendPasswordResetEmail(email, otp);
+
+    res.json({
+      message: 'Password reset code sent to your email',
+      userId: user._id
+    });
+  } catch (error) {
+    console.error('Forgot password error:', error);
+    res.status(500).json({ message: 'Server error during password reset request' });
+  }
+});
+
+// Reset password with OTP
+router.post('/reset-password', async (req, res) => {
   try {
     const { userId, otp, newPassword } = req.body;
 
