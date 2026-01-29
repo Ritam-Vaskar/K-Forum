@@ -1,6 +1,6 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 import User from '../models/User.js';
 import { auth } from '../middleware/auth.js';
 import dotenv from 'dotenv';
@@ -8,15 +8,8 @@ dotenv.config();
 
 const router = express.Router();
 
-// Email transporter
-// Email transporter
-const transporter = nodemailer.createTransport({
-  service: 'gmail',
-  auth: {
-    user: process.env.EMAIL_USER,
-    pass: process.env.EMAIL_PASS
-  }
-});
+// Initialize Resend
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 
 // Generate OTP
@@ -59,8 +52,8 @@ router.post('/register', async (req, res) => {
     await user.save();
 
     // Send OTP email
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
+    await resend.emails.send({
+      from: 'K-Forum <onboarding@resend.dev>',
       to: email,
       subject: 'K-Forum Email Verification',
       html: `
@@ -72,9 +65,7 @@ router.post('/register', async (req, res) => {
           <p>If you didn't create this account, please ignore this email.</p>
         </div>
       `
-    };
-
-    await transporter.sendMail(mailOptions);
+    });
 
     res.status(201).json({
       message: 'User created successfully. Please check your email for verification code.',
@@ -176,8 +167,8 @@ router.post('/login', async (req, res) => {
       await user.save();
 
       // Send new OTP email
-      const mailOptions = {
-        from: process.env.EMAIL_USER,
+      await resend.emails.send({
+        from: 'K-Forum <onboarding@resend.dev>',
         to: email,
         subject: 'K-Forum Email Verification',
         html: `
@@ -189,9 +180,7 @@ router.post('/login', async (req, res) => {
             <p>Please verify your email to access your account.</p>
           </div>
         `
-      };
-
-      await transporter.sendMail(mailOptions);
+      });
 
       return res.status(403).json({
         message: 'Please verify your email. A new verification code has been sent.',
@@ -262,8 +251,8 @@ router.post('/forgot-password', async (req, res) => {
     user.otpExpires = otpExpires;
     await user.save();
 
-    const mailOptions = {
-      from: process.env.EMAIL_USER,
+    await resend.emails.send({
+      from: 'K-Forum <onboarding@resend.dev>',
       to: email,
       subject: 'K-Forum Password Reset',
       html: `
@@ -275,9 +264,7 @@ router.post('/forgot-password', async (req, res) => {
           <p>If you didn't request this reset, please ignore this email.</p>
         </div>
       `
-    };
-
-    await transporter.sendMail(mailOptions);
+    });
 
     res.json({
       message: 'Password reset code sent to your email',
