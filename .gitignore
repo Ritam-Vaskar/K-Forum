@@ -1,0 +1,78 @@
+# Dependencies
+node_modules/
+**/node_modules/
+.pnp
+.pnp.js
+package-lock.json
+**/package-lock.json
+yarn.lock
+pnpm-lock.yaml
+
+# Environment variables
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+**/.env
+**/client/.env
+**/server/.env
+
+# Build outputs
+dist/
+**/dist/
+build/
+**/build/
+.vite/
+**/.vite/
+*.tsbuildinfo
+out/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Testing
+coverage/
+.nyc_output/
+hard-test-results.json
+**/hard-test-results.json
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+**/.bolt/
+
+# OS files
+Thumbs.db
+desktop.ini
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Vercel
+.vercel
+
+# Cloudinary (if storing config locally)
+cloudinary_config.json
+
+# Data dumps and backups
+*.dump
+*.sql
+posts_dump.json
+**/posts_dump.json
+
+# Stack dumps
+*.stackdump
+bash.exe.stackdump
