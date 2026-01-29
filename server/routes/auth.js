@@ -1,15 +1,12 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
-import { Resend } from 'resend';
 import User from '../models/User.js';
 import { auth } from '../middleware/auth.js';
+import emailService from '../services/emailService.js';
 import dotenv from 'dotenv';
 dotenv.config();
 
 const router = express.Router();
-
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 
 // Generate OTP
@@ -52,20 +49,7 @@ router.post('/register', async (req, res) => {
     await user.save();
 
     // Send OTP email
-    await resend.emails.send({
-      from: 'K-Forum <onboarding@resend.dev>',
-      to: email,
-      subject: 'K-Forum Email Verification',
-      html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h2 style="color: #17d059;">Welcome to K-Forum!</h2>
-          <p>Your verification code is:</p>
-          <h1 style="color: #17d059; font-size: 32px; letter-spacing: 5px;">${otp}</h1>
-          <p>This code will expire in 10 minutes.</p>
-          <p>If you didn't create this account, please ignore this email.</p>
-        </div>
-      `
-    });
+    await emailService.sendVerificationEmail(email, otp);
 
     res.status(201).json({
       message: 'User created successfully. Please check your email for verification code.',
@@ -180,20 +164,7 @@ router.post('/login', async (req, res) => {
             <p>Please verify your email to access your account.</p>
           </div>
         `
-      });
-
-      return res.status(403).json({
-        message: 'Please verify your email. A new verification code has been sent.',
-        userId: user._id,
-        requiresVerification: true
-      });
-    }
-
-    const token = jwt.sign(
-      { userId: user._id },
-      process.env.JWT_SECRET || 'K-Forum-secret',
-      { expiresIn: '7d' }
-    );
+      });emailService.sendReVerificationEmail(email, otp
 
     res.json({
       message: 'Login successful',
@@ -264,20 +235,7 @@ router.post('/forgot-password', async (req, res) => {
           <p>If you didn't request this reset, please ignore this email.</p>
         </div>
       `
-    });
-
-    res.json({
-      message: 'Password reset code sent to your email',
-      userId: user._id
-    });
-  } catch (error) {
-    console.error('Forgot password error:', error);
-    res.status(500).json({ message: 'Server error during password reset request' });
-  }
-});
-
-// Reset password with OTP
-router.post('/reset-password', async (req, res) => {
+    });emailService.sendPasswordResetEmail(email, otpr.post('/reset-password', async (req, res) => {
   try {
     const { userId, otp, newPassword } = req.body;
 
