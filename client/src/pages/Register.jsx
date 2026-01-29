@@ -134,7 +134,7 @@ const Register = () => {
                       onChange={handleChange}
                       required
                       className="w-full bg-gray-700 text-white pl-10 pr-4 py-3 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none transition-colors"
-                      placeholder="your.email@kiit.ac.in"
+                      placeholder="your.email@example.com"
                     />
                   </div>
                 </div>

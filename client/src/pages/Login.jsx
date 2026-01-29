@@ -25,17 +25,8 @@ const Login = () => {
     });
   };
 
-  const validateEmail = (email) => {
-    return email.trim().toLowerCase().endsWith('@kiit.ac.in');
-  };
-
   const handleLoginSubmit = async (e) => {
     e.preventDefault();
-
-    if (!validateEmail(formData.email)) {
-      toast.error('Only @kiit.ac.in email addresses are allowed.');
-      return;
-    }
 
     setLoading(true);
     try {
@@ -114,7 +105,7 @@ const Login = () => {
                       onChange={handleInputChange}
                       required
                       className="w-full bg-gray-700 text-white pl-10 pr-4 py-3 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none transition-colors"
-                      placeholder="your.email@kiit.ac.in"
+                      placeholder="your.email@example.com"
                     />
                   </div>
                 </div>

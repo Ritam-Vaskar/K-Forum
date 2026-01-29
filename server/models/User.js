@@ -12,12 +12,7 @@ const userSchema = new mongoose.Schema({
     required: true,
     unique: true,
     lowercase: true,
-    validate: {
-      validator: function (email) {
-        return email.endsWith('@kiit.ac.in');
-      },
-      message: 'Email must be a valid KIIT email address ending in @kiit.ac.in'
-    }
+    trim: true
   },
   password: {
     type: String,
