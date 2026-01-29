@@ -19,6 +19,9 @@ const server = createServer(app);
 const allowedOrigins = [
   "http://localhost:5173",
   "https://k-forum-tau.vercel.app",
+  "https://www.kforum.online",
+  "https://kforum.online",
+  "https://kforum-gamma.vercel.app",
   process.env.CLIENT_URL
 ].filter(Boolean);
 
