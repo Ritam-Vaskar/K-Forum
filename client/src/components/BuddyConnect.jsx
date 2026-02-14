@@ -67,20 +67,20 @@ const BuddyConnect = () => {
     if (suggestions.length === 0) return null;
 
     return (
-        <div className="glass-panel rounded-3xl p-5 mt-6 w-full">
-            <h3 className="flex items-center gap-2 font-bold text-white mb-4">
-                <Users className="w-5 h-5 text-emerald-400" />
+        <div className="glass-panel rounded-3xl p-6 mt-2 w-full flex-1 flex flex-col min-h-[400px]">
+            <h3 className="flex items-center gap-2 font-bold text-white mb-6 text-lg">
+                <Users className="w-6 h-6 text-emerald-400" />
                 Buddy Connect
             </h3>
             <div className="space-y-4">
                 {suggestions.map(user => (
-                    <div key={user._id} className="flex items-center relative group min-h-[44px]">
-                        <div className="flex items-center gap-3 pr-12">
+                    <div key={user._id} className="flex items-center relative group min-h-[60px] py-2 border-b border-white/5 last:border-0">
+                        <div className="flex items-center gap-4 pr-14 flex-1">
                             <div className="relative shrink-0">
                                 <img
                                     src={user.avatar || `https://ui-avatars.com/api/?name=${user.name}&background=random`}
                                     alt={user.name}
-                                    className="w-10 h-10 rounded-full border border-gray-700 object-cover"
+                                    className="w-12 h-12 rounded-full border border-gray-700 object-cover"
                                 />
                                 {sentRequests.includes(user._id) && (
                                     <div className="absolute -bottom-1 -right-1 bg-emerald-500 rounded-full p-0.5 border-2 border-[#0f1115]">
@@ -88,9 +88,9 @@ const BuddyConnect = () => {
                                     </div>
                                 )}
                             </div>
-                            <div className="overflow-hidden">
-                                <h4 className="text-sm font-bold text-gray-200 truncate w-28 lg:w-32">{user.name}</h4>
-                                <p className="text-xs text-gray-500 truncate">{getBranchAbbreviation(user.branch)} • {user.year} Year</p>
+                            <div className="overflow-hidden flex-1">
+                                <h4 className="text-base font-bold text-gray-200 truncate">{user.name}</h4>
+                                <p className="text-xs text-gray-400 truncate">{getBranchAbbreviation(user.branch)} • {user.year} Year</p>
                             </div>
                         </div>
                         <button
