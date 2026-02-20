@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import axios from '../../services/axiosSetup';
 import toast from 'react-hot-toast';
 
+import heartImage from '../../heart.jpg';
+
 const REACTIONS = [
     { type: 'like', emoji: '👍', label: 'Like', color: 'text-blue-500' },
     { type: 'love', emoji: '❤️', label: 'Love', color: 'text-red-500' },
@@ -134,8 +136,8 @@ const PostReactions = ({ postId, initialCounts = {}, initialUserReaction = null,
                         disabled={isLoading}
                         className={`flex items-center gap-2 px-3 py-2 rounded-xl transition-all duration-200 select-none hover:bg-white/5 ${isLoading ? 'opacity-50' : ''}`}
                     >
-                        <span className="text-xl transition-transform hover:scale-125">
-                            {userReaction ? currentReaction?.emoji : '🩶'}
+                        <span className="text-xl transition-transform hover:scale-125 flex items-center justify-center w-6 h-6">
+                            {userReaction ? currentReaction?.emoji : <img src={heartImage} alt="React" className="w-6 h-6 object-contain opacity-50 grayscale" />}
                         </span>
                         <span className={`text-sm font-medium ${userReaction ? currentReaction?.color : 'text-gray-500'}`}>
                             {userReaction ? currentReaction?.label : 'React'}
