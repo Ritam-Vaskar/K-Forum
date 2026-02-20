@@ -242,17 +242,17 @@ const Wordle = () => {
     }
 
     return (
-        <div className="relative z-10 py-6 px-4">
-            <div className="glass-panel max-w-lg mx-auto p-8 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-xl">
+        <div className="relative z-10 py-6 px-4 pb-80 md:pb-96">
+            <div className="glass-panel max-w-lg mx-auto p-4 md:p-8 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-xl">
                 {/* Header */}
-                <div className="text-center mb-8">
-                    <h1 className="text-4xl font-black text-white mb-2 flex items-center justify-center gap-3">
+                <div className="text-center mb-6 md:mb-8">
+                    <h1 className="text-3xl md:text-4xl font-black text-white mb-2 flex items-center justify-center gap-3">
                         <span className="bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent drop-shadow-sm">
                             K-Wordle
                         </span>
-                        <Sparkles className="w-8 h-8 text-amber-400 animate-pulse drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
+                        <Sparkles className="w-6 h-6 md:w-8 md:h-8 text-amber-400 animate-pulse drop-shadow-[0_0_10px_rgba(251,191,36,0.5)]" />
                     </h1>
-                    <p className="text-gray-400 font-medium tracking-wide">Guess the 5-letter word in 6 tries</p>
+                    <p className="text-gray-400 text-sm md:text-base font-medium tracking-wide">Guess the 5-letter word in 6 tries</p>
 
                     {gameState.hint && (
                         <div className="mt-4 px-4 py-2 bg-amber-500/10 border border-amber-500/30 rounded-xl inline-block backdrop-blur-md">
@@ -264,7 +264,7 @@ const Wordle = () => {
                 </div>
 
                 {/* Streak Display */}
-                <div className="flex justify-center gap-4 mb-8">
+                <div className="flex justify-center gap-4 mb-6 md:mb-8">
                     <div className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-orange-500/10 to-red-500/10 border border-orange-500/20 rounded-xl backdrop-blur-sm group hover:border-orange-500/40 transition-all">
                         <Flame className={`w-5 h-5 ${streak.current > 0 ? 'text-orange-400 animate-fire-glow' : 'text-gray-500'}`} />
                         <span className="text-white font-bold">{streak.current}</span>
@@ -289,7 +289,7 @@ const Wordle = () => {
                         return (
                             <div
                                 key={rowIndex}
-                                className={`flex justify-center gap-2 ${shakeRow === rowIndex ? 'animate-shake' : ''}`}
+                                className={`flex justify-center gap-1.5 md:gap-2 ${shakeRow === rowIndex ? 'animate-shake' : ''}`}
                             >
                                 {letters.map((letter, colIndex) => {
                                     const status = guess?.result?.[colIndex];
@@ -300,8 +300,8 @@ const Wordle = () => {
                                         <div
                                             key={colIndex}
                                             className={`
-                        w-14 h-14 sm:w-16 sm:h-16 flex items-center justify-center
-                        text-2xl sm:text-3xl font-black text-white uppercase
+                        w-14 h-14 md:w-16 md:h-16 flex items-center justify-center
+                        text-2xl md:text-3xl font-black text-white uppercase
                         border-2 rounded-xl transition-all duration-300
                         ${getTileColor(status)}
                         ${hasLetter && !guess ? 'scale-105 border-gray-500 bg-white/5 shadow-lg' : ''}
@@ -327,7 +327,7 @@ const Wordle = () => {
 
                 {/* Game Over Message */}
                 {gameState.completed && (
-                    <div className={`text-center mb-8 p-6 rounded-2xl border backdrop-blur-md animate-bounce-in ${gameState.won
+                    <div className={`text-center mb-6 p-6 rounded-2xl border backdrop-blur-md animate-bounce-in ${gameState.won
                         ? 'bg-emerald-500/10 border-emerald-500/30 shadow-[0_0_30px_rgba(16,185,129,0.2)]'
                         : 'bg-red-500/10 border-red-500/30'
                         }`}>
@@ -347,35 +347,9 @@ const Wordle = () => {
                     </div>
                 )}
 
-                {/* Keyboard */}
-                <div className="space-y-2">
-                    {keyboard.map((row, rowIndex) => (
-                        <div key={rowIndex} className="flex justify-center gap-1 sm:gap-2">
-                            {row.map((key) => (
-                                <button
-                                    key={key}
-                                    onClick={() => handleKeyPress(key)}
-                                    disabled={gameState.completed}
-                                    className={`
-                    ${key.length > 1 ? 'px-3 sm:px-4 text-xs' : 'w-8 sm:w-10'}
-                    h-12 sm:h-14 rounded-xl font-bold text-white uppercase
-                    transition-all duration-150 active:scale-95 shadow-md
-                    ${getKeyColor(key)}
-                    ${gameState.completed ? 'opacity-50 cursor-not-allowed' : ''}
-                    flex items-center justify-center border-b-[3px] border-black/20
-                  `}
-                                >
-                                    {key === 'BACKSPACE' ? <Delete className="w-5 h-5" /> :
-                                        key === 'ENTER' ? <CornerDownLeft className="w-5 h-5" /> : key}
-                                </button>
-                            ))}
-                        </div>
-                    ))}
-                </div>
-
                 {/* Play Again / Stats */}
                 {gameState.completed && (
-                    <div className="mt-8 text-center">
+                    <div className="text-center">
                         <button
                             onClick={() => navigate('/profile')}
                             className="px-8 py-3 bg-gradient-to-r from-purple-500 to-pink-500 hover:from-purple-600 hover:to-pink-600 text-white rounded-xl font-bold transition-all shadow-lg hover:shadow-purple-500/30 hover:-translate-y-1"
@@ -384,6 +358,38 @@ const Wordle = () => {
                         </button>
                     </div>
                 )}
+
+            </div>
+
+            {/* Fixed Bottom Keyboard */}
+            <div className="fixed md:absolute bottom-0 left-0 right-0 p-2 pb-6 md:pb-32 md:p-8 bg-[#0f1115]/95 md:bg-transparent md:backdrop-blur-none backdrop-blur-xl border-t border-white/10 md:border-t-0 z-50 shadow-[0_-10px_40px_rgba(0,0,0,0.5)] md:shadow-none">
+                <div className="max-w-4xl md:max-w-2xl mx-auto w-full space-y-2">
+                    {keyboard.map((row, rowIndex) => (
+                        <div key={rowIndex} className="flex justify-center gap-1.5 w-full">
+                            {row.map((key) => {
+                                const isSpecialKey = key.length > 1;
+                                return (
+                                    <button
+                                        key={key}
+                                        onClick={() => handleKeyPress(key)}
+                                        disabled={gameState.completed}
+                                        className={`
+                                            ${isSpecialKey ? 'flex-[1.5] text-xs md:text-sm px-1' : 'flex-1 text-lg md:text-xl'}
+                                            h-14 md:h-14 rounded-lg md:rounded-xl font-bold text-white uppercase
+                                            transition-all duration-150 active:scale-95 shadow-lg
+                                            ${getKeyColor(key)}
+                                            ${gameState.completed ? 'opacity-50 cursor-not-allowed' : ''}
+                                            flex items-center justify-center border-b-[4px] border-black/20
+                                        `}
+                                    >
+                                        {key === 'BACKSPACE' ? <Delete className="w-6 h-6 md:w-5 md:h-5" /> :
+                                            key === 'ENTER' ? <CornerDownLeft className="w-6 h-6 md:w-5 md:h-5" /> : key}
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
