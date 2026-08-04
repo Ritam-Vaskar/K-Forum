@@ -25,36 +25,53 @@ const upload = multer({
 
 const router = express.Router();
 
-// Get suggested users for buddy connect
+// Get suggested users for buddy connect (all users except current user)
 router.get('/suggestions', auth, async (req, res) => {
   try {
-    const user = await User.findById(req.userId);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    const currentUser = await User.findById(req.userId);
+    if (!currentUser) return res.status(404).json({ message: 'User not found' });
 
-    // Only exclude the current user so the widget always has people to show
-    const excludeIds = [user._id];
+    // Fetch all users except the logged in user
+    const users = await User.find(
+      { _id: { $ne: currentUser._id } },
+      { name: 1, avatar: 1, studentId: 1, branch: 1, year: 1, connectionRequests: 1 }
+    ).lean();
 
-    // Find random users
-    const suggestions = await User.aggregate([
-      { $match: { _id: { $nin: excludeIds } } },
-      { $sample: { size: 8 } },
-      { $project: { name: 1, avatar: 1, studentId: 1, branch: 1, year: 1 } }
-    ]);
+    const formattedUsers = users.map(user => {
+      const requestSent = user.connectionRequests?.some(
+        r => r.user?.toString() === req.userId.toString() && r.status === 'pending'
+      ) || false;
 
-    res.json(suggestions);
+      const isConnected = currentUser.connections?.some(
+        cId => cId.toString() === user._id.toString()
+      ) || false;
+
+      return {
+        _id: user._id,
+        name: user.name,
+        avatar: user.avatar,
+        studentId: user.studentId,
+        branch: user.branch,
+        year: user.year,
+        requestSent,
+        isConnected
+      };
+    });
+
+    res.json(formattedUsers);
   } catch (error) {
     console.error('Get suggestions error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });
 
-// Fallback: get all users (excluding current user) for BuddyConnect when suggestions returns empty
+// Fallback: get all users (excluding current user) for BuddyConnect
 router.get('/all-users', auth, async (req, res) => {
   try {
     const users = await User.find(
       { _id: { $ne: req.userId } },
       { name: 1, avatar: 1, studentId: 1, branch: 1, year: 1 }
-    ).limit(20);
+    );
     res.json(users);
   } catch (error) {
     console.error('Get all users error:', error);
@@ -66,7 +83,7 @@ router.get('/all-users', auth, async (req, res) => {
 router.get('/connections', auth, async (req, res) => {
   try {
     const user = await User.findById(req.userId).populate('connections', 'name avatar studentId branch year');
-    res.json(user.connections);
+    res.json({ connections: user.connections || [] });
   } catch (error) {
     console.error('Get connections error:', error);
     res.status(500).json({ message: 'Server error' });
@@ -81,14 +98,19 @@ router.get('/requests', auth, async (req, res) => {
       select: 'name avatar studentId branch year'
     });
 
-    // Filter out only pending requests
-    const pendingRequests = user.connectionRequests
-      .filter(req => req.status === 'pending')
-      .map(req => ({
-        ...req.user.toObject(),
-        requestId: req._id,
-        requestedAt: req.createdAt
-      }));
+    if (!user) return res.status(404).json({ message: 'User not found' });
+
+    // Filter out only valid pending requests where user object exists
+    const pendingRequests = (user.connectionRequests || [])
+      .filter(reqItem => reqItem.status === 'pending' && reqItem.user)
+      .map(reqItem => {
+        const userObj = typeof reqItem.user.toObject === 'function' ? reqItem.user.toObject() : reqItem.user;
+        return {
+          ...userObj,
+          requestId: reqItem._id,
+          requestedAt: reqItem.createdAt
+        };
+      });
 
     res.json(pendingRequests);
   } catch (error) {
@@ -101,7 +123,7 @@ router.get('/requests', auth, async (req, res) => {
 router.post('/connect/:userId', auth, async (req, res) => {
   try {
     const { userId } = req.params;
-    if (userId === req.userId.toString()) {
+    if (userId.toString() === req.userId.toString()) {
       return res.status(400).json({ message: 'Cannot connect with yourself' });
     }
 
@@ -110,29 +132,55 @@ router.post('/connect/:userId', auth, async (req, res) => {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Check if already requested or connected
-    const existingRequest = targetUser.connectionRequests.find(
-      r => r.user.toString() === req.userId
+    const isConnected = targetUser.connections?.some(
+      cId => cId.toString() === req.userId.toString()
     );
-    const isConnected = targetUser.connections.includes(req.userId);
-
-    if (existingRequest || isConnected) {
-      return res.status(400).json({ message: 'Request already sent or connected' });
+    if (isConnected) {
+      return res.status(400).json({ message: 'Already connected' });
     }
 
-    // Add request to target user
-    targetUser.connectionRequests.push({
-      user: req.userId,
-      status: 'pending'
-    });
+    const existingIndex = targetUser.connectionRequests.findIndex(
+      r => r.user?.toString() === req.userId.toString()
+    );
+
+    if (existingIndex !== -1) {
+      if (targetUser.connectionRequests[existingIndex].status === 'pending') {
+        return res.status(400).json({ message: 'Request already sent' });
+      }
+      // Re-activate request if previously rejected or updated
+      targetUser.connectionRequests[existingIndex].status = 'pending';
+      targetUser.connectionRequests[existingIndex].createdAt = new Date();
+    } else {
+      // Add new request to target user
+      targetUser.connectionRequests.push({
+        user: req.userId,
+        status: 'pending',
+        createdAt: new Date()
+      });
+    }
+
     await targetUser.save();
 
     // Send email notification to target user
-    const sender = await User.findById(req.userId).select('name');
-    emailService.sendConnectionRequestEmail(
-      targetUser.email, targetUser.name, sender.name
+    const sender = await User.findById(req.userId).select('name email');
+    
+    console.log(' DEBUG - Sender:', sender);
+    console.log('DEBUG - Sender Name:', sender?.name);
+    console.log(' DEBUG - Target User Email:', targetUser.email);
+
+    if (!sender?.name) {
+      console.error('ERROR: Sender name is missing!');
+    }
+
+    // Send email
+    await emailService.sendConnectionRequestEmail(
+      targetUser.email, 
+      targetUser.name, 
+      sender?.name || 'Unknown User',
+      sender?.email || 'noreply@kforum.me'
     ).catch(err => console.error('Failed to send connect email:', err));
 
+    console.log('Connection request sent to:', targetUser.email);
     res.json({ message: 'Connection request sent' });
   } catch (error) {
     console.error('Connect error:', error);
@@ -158,6 +206,7 @@ router.post('/connect/:userId/accept', auth, async (req, res) => {
     // Add to connections for both
     user.connections.push(userId);
     user.connectionRequests[requestIndex].status = 'accepted';
+    user.connectionRequests[requestIndex].respondedAt = new Date();
 
     const requester = await User.findById(userId);
     requester.connections.push(req.userId);
@@ -177,6 +226,13 @@ router.post('/connect/:userId/accept', auth, async (req, res) => {
       });
       await newConv.save();
     }
+
+    // Send acceptance email
+    await emailService.sendConnectionAcceptedEmail(
+      requester.email,
+      requester.name,
+      user.name
+    ).catch(err => console.error('Failed to send acceptance email:', err));
 
     res.json({ message: 'Connection accepted and chat initialized' });
   } catch (error) {
@@ -200,7 +256,16 @@ router.post('/connect/:userId/reject', auth, async (req, res) => {
     }
 
     user.connectionRequests[requestIndex].status = 'rejected';
+    user.connectionRequests[requestIndex].respondedAt = new Date();
     await user.save();
+
+    // Send rejection email
+    const requester = await User.findById(userId);
+    await emailService.sendConnectionRejectedEmail(
+      requester.email,
+      requester.name,
+      user.name
+    ).catch(err => console.error('Failed to send rejection email:', err));
 
     res.json({ message: 'Connection rejected' });
   } catch (error) {
@@ -224,9 +289,16 @@ router.get('/:id', async (req, res) => {
       moderationStatus: 'approved'
     });
 
+    // Count accepted connections
+    const acceptedCount = user.connectionRequests?.filter(
+      r => r.status === 'accepted'
+    ).length || 0;
+
     res.json({
       ...user.toObject(),
-      postCount
+      postCount,
+      connectionCount: user.connections?.length || 0,
+      acceptedCount: acceptedCount
     });
   } catch (error) {
     console.error('Get user error:', error);
@@ -237,8 +309,22 @@ router.get('/:id', async (req, res) => {
 // Update user profile
 router.put('/profile', auth, upload.single('avatar'), async (req, res) => {
   try {
-    const { name, year, branch } = req.body;
+    const { name, year, branch, studentId } = req.body;
     const updateData = { name, year, branch };
+
+    if (studentId) {
+      const cleanStudentId = studentId.trim();
+      // Check if studentId contains spaces or invalid chars if desired, but let's keep it simple
+      // Check uniqueness
+      const existingUser = await User.findOne({ 
+        studentId: cleanStudentId, 
+        _id: { $ne: req.userId } 
+      });
+      if (existingUser) {
+        return res.status(400).json({ message: 'Username (@) is already taken' });
+      }
+      updateData.studentId = cleanStudentId;
+    }
 
     // Handle avatar upload if file is present
     if (req.file) {

@@ -114,8 +114,8 @@ const Login = () => {
       <div className="max-w-md w-full">
         {/* Logo / Brand */}
         <div className="text-center mb-8">
-          <div className="w-14 h-14 bg-gradient-to-tr from-emerald-500 to-teal-400 rounded-2xl flex items-center justify-center mx-auto mb-4 border border-white/10">
-            <span className="text-white font-extrabold text-2xl">K</span>
+          <div className="w-14 h-14 rounded-2xl flex items-center justify-center mx-auto mb-4 border-2 border-white/20 shadow-[0_0_10px_rgba(255,255,255,0.1)] overflow-hidden">
+            <img src="/logo.png" alt="K-Forum Logo" className="w-full h-full object-cover" />
           </div>
           <h1 className="text-3xl font-extrabold text-white tracking-tight">K-Forum</h1>
           <p className="text-gray-400 text-sm mt-1">Your student community</p>
@@ -195,49 +195,7 @@ const Login = () => {
                   {loading ? 'Signing In...' : 'Sign In'}
                 </button>
 
-                <div className="relative my-6">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-gray-600"></div>
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="px-2 bg-[#1a1f2e] text-gray-400">Or continue with</span>
-                  </div>
-                </div>
 
-                <button
-                  type="button"
-                  onClick={async () => {
-                    setLoading(true);
-                    try {
-                      const demoCredentials = {
-                        email: 'dummy@kiit.ac.in',
-                        password: 'dummy123'
-                      };
-
-                      const response = await axios.post('/api/auth/login', demoCredentials);
-
-                      if (response.data.requiresVerification) {
-                        setUserId(response.data.userId);
-                        setStep('otp');
-                        toast.success(response.data.message || 'Please verify your email.');
-                      } else {
-                        login(response.data.user, response.data.token);
-                        toast.success(`Welcome Demo User!`);
-                        navigate('/');
-                      }
-                    } catch (error) {
-                      console.error('Demo Login Error:', error);
-                      toast.error('Failed to login as demo user');
-                    } finally {
-                      setLoading(false);
-                    }
-                  }}
-                  disabled={loading}
-                  className="w-full bg-gray-700 text-white py-3 rounded-lg font-semibold hover:bg-gray-600 focus:outline-none focus:ring-4 focus:ring-gray-500/50 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center gap-2"
-                >
-                  <Shield className="w-5 h-5" />
-                  Demo User Login
-                </button>
 
 
               </form>
