@@ -131,7 +131,7 @@ const Admin = () => {
             <h1 className="text-3xl font-bold text-white">Admin Dashboard</h1>
           </div>
           <p className="text-gray-400">
-            Welcome back, {user.name}. Manage the K-Forum community effectively.
+            Welcome Back, {user.name}. Manage the K-Forum Community Effectively.
           </p>
         </div>
 
@@ -208,7 +208,7 @@ const Admin = () => {
                   {stats.categoryStats.map((category) => (
                     <div key={category._id} className="text-center">
                       <p className="text-2xl font-bold text-[#17d059]">{category.count}</p>
-                      <p className="text-gray-400 capitalize">{category._id.replace('-', ' ')}</p>
+                      <p className="text-gray-400 capitalize">{(category._id || 'general').replace('-', ' ')}</p>
                     </div>
                   ))}
                 </div>

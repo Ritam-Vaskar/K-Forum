@@ -1,7 +1,9 @@
+import './loadEnv.js';
+
 import express from 'express';
 import mongoose from 'mongoose';
 import cors from 'cors';
-import dotenv from 'dotenv';
+
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import authRoutes from './routes/auth.js';
@@ -9,8 +11,11 @@ import postRoutes from './routes/posts.js';
 import userRoutes from './routes/users.js';
 import adminRoutes from './routes/admin.js';
 import wordleRoutes from './routes/wordle.js';
+import emailService from "./services/emailService.js";
+import chatRoutes from './routes/chat.js';
+import User from './models/User.js';
 
-dotenv.config();
+
 
 const app = express();
 const server = createServer(app);
@@ -18,6 +23,8 @@ const server = createServer(app);
 // Allowed origins configuration
 const allowedOrigins = [
   "http://localhost:5173",
+  "https://kforum.me",
+  "https://www.kforum.me",
   "https://k-forum-tau.vercel.app",
   "https://www.kforum.online",
   "https://kforum.online",
@@ -45,7 +52,31 @@ mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/K-Forum',
   useNewUrlParser: true,
   useUnifiedTopology: true,
 })
-  .then(() => console.log('🔗 MongoDB Connected'))
+  .then(async () => {
+    console.log('🔗 MongoDB Connected');
+    try {
+      // 1. Clean up any existing null studentId entries in the DB
+      await mongoose.connection.collection('users').updateMany(
+        { studentId: null },
+        { $unset: { studentId: "" } }
+      );
+      console.log('🧹 Cleaned up null studentId entries in users collection.');
+
+      // 2. Drop old non-partial studentId_1 index from MongoDB Atlas if it exists
+      await mongoose.connection.collection('users').dropIndex('studentId_1');
+      console.log('🗑️ Successfully dropped old studentId_1 index from database!');
+    } catch (err) {
+      console.log('ℹ️ studentId_1 index drop info:', err.message);
+    }
+
+    try {
+      // 3. Rebuild User model indexes with partial filter expression
+      await User.syncIndexes();
+      console.log('✅ Synced User model indexes successfully!');
+    } catch (err) {
+      console.log('ℹ️ User index sync info:', err.message);
+    }
+  })
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Socket.IO Connection
@@ -75,6 +106,8 @@ app.use('/api/posts', postRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/wordle', wordleRoutes);
+app.use('/api/chat', chatRoutes);
+app.use('/api/messages', chatRoutes);
 
 
 // Health Check

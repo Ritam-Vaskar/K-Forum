@@ -3,12 +3,12 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import axios from '../services/axiosSetup';
 import PostCard from '../components/Posts/PostCard';
-import { User, Mail, GraduationCap, Calendar, Trophy, MessageCircle, ThumbsUp, Edit3, Camera, Flame, Target, Gamepad2, LogOut } from 'lucide-react';
+import { User, Mail, GraduationCap, Calendar, Trophy, MessageCircle, ThumbsUp, Edit3, Camera, Flame, Target, Gamepad2, LogOut, ArrowLeft } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const Profile = () => {
   const { id: urlId } = useParams();
-  const { user: currentUser, logout } = useAuth();
+  const { user: currentUser, logout, updateUser } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(null);
   const [posts, setPosts] = useState([]);
@@ -20,7 +20,8 @@ const Profile = () => {
   const [editData, setEditData] = useState({
     name: '',
     year: '',
-    branch: ''
+    branch: '',
+    studentId: ''
   });
   const [avatarPreview, setAvatarPreview] = useState(null);
   const fileInputRef = useRef(null);
@@ -39,7 +40,8 @@ const Profile = () => {
       setEditData({
         name: response.data.name,
         year: response.data.year,
-        branch: response.data.branch
+        branch: response.data.branch,
+        studentId: response.data.studentId || ''
       });
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -88,6 +90,7 @@ const Profile = () => {
         }
       );
       setProfile({ ...profile, ...response.data });
+      if (response.data.avatar) updateUser({ avatar: response.data.avatar });
       toast.success('Profile picture updated successfully');
     } catch (error) {
       console.error('Error uploading avatar:', error);
@@ -100,9 +103,18 @@ const Profile = () => {
     try {
       const response = await axios.put(`/api/users/profile`, editData);
       setProfile({ ...profile, ...response.data });
+      // Also update AuthContext so sidebar hover popup reflects new name/studentId
+      updateUser({
+        name: response.data.name,
+        studentId: response.data.studentId,
+        year: response.data.year,
+        branch: response.data.branch
+      });
       setEditMode(false);
+      toast.success('Profile updated successfully! 🎉');
     } catch (error) {
       console.error('Error updating profile:', error);
+      toast.error(error.response?.data?.message || 'Failed to update profile');
     }
   };
 
@@ -133,8 +145,17 @@ const Profile = () => {
   const wordleStreak = profile.wordleStreak || { current: 0, max: 0, totalWins: 0 };
 
   return (
-    <div className="min-h-screen py-8">
+    <div className="min-h-screen py-4 sm:py-8">
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="mb-4">
+          <button
+            onClick={() => navigate(-1)}
+            className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-white/5 hover:bg-white/10 active:scale-95 text-gray-300 hover:text-white border border-white/10 text-sm font-semibold transition-all shadow-md"
+          >
+            <ArrowLeft className="w-4 h-4 text-[#17d059]" />
+            <span>Back</span>
+          </button>
+        </div>
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Profile Sidebar */}
           <div className="lg:col-span-1">
@@ -170,28 +191,47 @@ const Profile = () => {
                 </div>
                 {editMode ? (
                   <form onSubmit={handleEditSubmit} className="space-y-4">
-                    <input
-                      type="text"
-                      value={editData.name}
-                      onChange={(e) => setEditData({ ...editData, name: e.target.value })}
-                      className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none"
-                    />
-                    <select
-                      value={editData.year}
-                      onChange={(e) => setEditData({ ...editData, year: e.target.value })}
-                      className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none"
-                    >
-                      <option value="1">1st Year</option>
-                      <option value="2">2nd Year</option>
-                      <option value="3">3rd Year</option>
-                      <option value="4">4th Year</option>
-                    </select>
-                    <input
-                      type="text"
-                      value={editData.branch}
-                      onChange={(e) => setEditData({ ...editData, branch: e.target.value })}
-                      className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none"
-                    />
+                    <div className="space-y-1 text-left">
+                      <label className="text-xs text-gray-400 font-semibold px-1">Name</label>
+                      <input
+                        type="text"
+                        value={editData.name}
+                        onChange={(e) => setEditData({ ...editData, name: e.target.value })}
+                        className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1 text-left">
+                      <label className="text-xs text-gray-400 font-semibold px-1">@ Username</label>
+                      <input
+                        type="text"
+                        value={editData.studentId}
+                        onChange={(e) => setEditData({ ...editData, studentId: e.target.value })}
+                        placeholder="username"
+                        className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none"
+                      />
+                    </div>
+                    <div className="space-y-1 text-left">
+                      <label className="text-xs text-gray-400 font-semibold px-1">Year</label>
+                      <select
+                        value={editData.year}
+                        onChange={(e) => setEditData({ ...editData, year: e.target.value })}
+                        className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none"
+                      >
+                        <option value="1">1st Year</option>
+                        <option value="2">2nd Year</option>
+                        <option value="3">3rd Year</option>
+                        <option value="4">4th Year</option>
+                      </select>
+                    </div>
+                    <div className="space-y-1 text-left">
+                      <label className="text-xs text-gray-400 font-semibold px-1">Branch</label>
+                      <input
+                        type="text"
+                        value={editData.branch}
+                        onChange={(e) => setEditData({ ...editData, branch: e.target.value })}
+                        className="w-full bg-gray-700 text-white px-3 py-2 rounded-lg border border-gray-600 focus:border-[#17d059] focus:outline-none"
+                      />
+                    </div>
                     <div className="flex space-x-2">
                       <button
                         type="submit"
@@ -232,7 +272,16 @@ const Profile = () => {
                 </div>
                 <div className="flex items-center space-x-3 text-gray-300">
                   <GraduationCap className="w-5 h-5 text-[#17d059]" />
-                  <span>{profile.year}th Year • {profile.branch}</span>
+                  <span>
+                    {(() => {
+                      const y = parseInt(profile.year);
+                      if (y === 1) return '1st';
+                      if (y === 2) return '2nd';
+                      if (y === 3) return '3rd';
+                      if (y === 4) return '4th';
+                      return `${profile.year}th`;
+                    })()} Year • {profile.branch}
+                  </span>
                 </div>
                 <div className="flex items-center space-x-3 text-gray-300">
                   <Calendar className="w-5 h-5 text-[#17d059]" />
@@ -311,7 +360,7 @@ const Profile = () => {
 
                   {wordleStreak.current === 0 && wordleStreak.max > 0 && (
                     <p className="mt-2 text-center text-gray-500 text-sm">
-                      Streak broken! Start a new one today.
+                      Streak Broken! Start a new one today.
                     </p>
                   )}
                 </div>
@@ -338,7 +387,7 @@ const Profile = () => {
               {/* Stats */}
               <div className="mt-6 pt-6 border-t border-gray-700">
                 <h3 className="text-lg font-semibold text-white mb-4">Forum Statistics</h3>
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-3 gap-4">
                   <div className="text-center">
                     <div className="text-2xl font-bold text-[#17d059]">{profile.postCount || 0}</div>
                     <div className="text-sm text-gray-400">Posts</div>
@@ -346,6 +395,10 @@ const Profile = () => {
                   <div className="text-center">
                     <div className="text-2xl font-bold text-[#17d059]">{profile.reputation || 0}</div>
                     <div className="text-sm text-gray-400">Points</div>
+                  </div>
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-[#17d059]">{profile.connectionCount || 0}</div>
+                    <div className="text-sm text-gray-400">Connections</div>
                   </div>
                 </div>
               </div>
@@ -396,7 +449,7 @@ const Profile = () => {
             {posts.length === 0 ? (
               <div className="bg-white/5 backdrop-blur-xl rounded-2xl p-8 text-center border border-white/10">
                 <MessageCircle className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">No posts yet</h3>
+                <h3 className="text-xl font-semibold text-white mb-2">No Posts Yet</h3>
                 <p className="text-gray-400">
                   {isOwnProfile ? "You haven't created any posts yet." : "This user hasn't created any public posts yet."}
                 </p>

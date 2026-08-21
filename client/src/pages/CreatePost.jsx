@@ -14,6 +14,11 @@ const CreatePost = () => {
     isAnonymous: false,
     eventDate: ''
   });
+  const [pollOptions, setPollOptions] = useState([
+    { text: '' },
+    { text: '' }
+  ]);
+  const [correctAnswers, setCorrectAnswers] = useState([]);
   const [selectedImages, setSelectedImages] = useState([]);
   const [imageFiles, setImageFiles] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -28,7 +33,9 @@ const CreatePost = () => {
     { id: 'lost-found', name: 'Lost & Found', icon: '🔍' },
     { id: 'clubs', name: 'Clubs', icon: '🏛️' },
     { id: 'general', name: 'General', icon: '💬' },
-    { id: 'Bookies', name: 'Bookies', icon: '🤖' }
+    { id: 'Bookies', name: 'Bookies', icon: '🤖' },
+    { id: 'qna', name: 'Q&A', icon: '❓' },
+    { id: 'polling', name: 'Polling', icon: '📊' }
   ];
 
   const handleChange = (e) => {
@@ -42,7 +49,7 @@ const CreatePost = () => {
   const handleImageChange = (e) => {
     const files = Array.from(e.target.files);
     if (files.length + selectedImages.length > 5) {
-      toast.error('Maximum 5 images allowed');
+      toast.error('Maximum 5 Images Allowed');
       return;
     }
 
@@ -90,12 +97,27 @@ const CreatePost = () => {
     try {
       const formDataToSend = new FormData();
       formDataToSend.append('title', formData.title);
-      formDataToSend.append('content', formData.content);
+      formDataToSend.append('content', formData.content || (formData.category === 'qna' ? 'Q&A' : 'Poll'));
       formDataToSend.append('category', formData.category);
       formDataToSend.append('tags', formData.tags);
       formDataToSend.append('isAnonymous', formData.isAnonymous);
       if (formData.category === 'events' && formData.eventDate) {
         formDataToSend.append('eventDate', formData.eventDate);
+      }
+
+      if (['qna', 'polling'].includes(formData.category)) {
+        const cleanOptions = pollOptions.filter(opt => opt.text.trim() !== '');
+        if (cleanOptions.length < 2) {
+          throw new Error('Please provide at least 2 options.');
+        }
+        formDataToSend.append('pollOptions', JSON.stringify(cleanOptions));
+
+        if (formData.category === 'qna') {
+          if (correctAnswers.length === 0) {
+            throw new Error('Please select at least one correct answer for Q&A.');
+          }
+          formDataToSend.append('correctAnswers', JSON.stringify(correctAnswers));
+        }
       }
 
       imageFiles.forEach(file => {
@@ -112,7 +134,7 @@ const CreatePost = () => {
         toast.success('Your post has been submitted for review. It will be visible once approved by an admin.');
         navigate('/');
       } else {
-        toast.success('Post created successfully!');
+        toast.success('Post Created Successfully!');
         navigate(`/post/${response.data.post._id}`);
       }
     } catch (error) {
@@ -148,14 +170,14 @@ const CreatePost = () => {
             <h1 className="text-3xl md:text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-cyan-400 mb-4 animate-float">
               Create New Post
             </h1>
-            <p className="text-gray-400 text-lg">Share your thoughts with the K-Forum community</p>
+            <p className="text-gray-400 text-lg">Share Your Thoughts With The K-Forum Community</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Title */}
+            {/* Title / Question */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
-                Title
+                {['qna', 'polling'].includes(formData.category) ? 'Question' : 'Title'}
               </label>
               <input
                 type="text"
@@ -165,7 +187,7 @@ const CreatePost = () => {
                 required
                 maxLength="200"
                 className="w-full bg-white/5 text-white px-6 py-4 rounded-2xl border border-gray-700/50 focus:border-emerald-500/50 focus:bg-white/10 focus:outline-none transition-all placeholder-gray-600 font-medium text-lg"
-                placeholder="Give your post a catchy title..."
+                placeholder={['qna', 'polling'].includes(formData.category) ? 'Ask your question here...' : 'Give your post a catchy title...'}
               />
               <div className="flex justify-end">
                 <span className="text-xs text-gray-500 font-mono">
@@ -179,7 +201,7 @@ const CreatePost = () => {
               <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
                 Category
               </label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-3">
                 {categories.map((category) => (
                   <label
                     key={category.id}
@@ -230,32 +252,119 @@ const CreatePost = () => {
               </div>
             )}
 
-            {/* Content */}
-            <div className="space-y-2">
-              <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
-                Content
-              </label>
-              <textarea
-                name="content"
-                value={formData.content}
-                onChange={handleChange}
-                required
-                maxLength="5000"
-                rows="8"
-                className="w-full bg-white/5 text-white px-6 py-4 rounded-2xl border border-gray-700/50 focus:border-emerald-500/50 focus:bg-white/10 focus:outline-none transition-all resize-none placeholder-gray-600 leading-relaxed"
-                placeholder="What's on your mind? Share your story, confession, or question..."
-              />
-              <div className="flex justify-end">
-                <span className="text-xs text-gray-500 font-mono">
-                  {formData.content.length}/5000
-                </span>
+            {/* Options Builder for Q&A and Polling */}
+            {['qna', 'polling'].includes(formData.category) && (
+              <div className="space-y-4 animate-fade-in bg-white/5 p-6 rounded-2xl border border-white/5">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
+                    {formData.category === 'qna' ? 'Answer Options' : 'Poll Options'}
+                  </label>
+                  <span className="text-xs text-gray-500 font-mono">
+                    {pollOptions.length}/10 options
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {pollOptions.map((option, index) => (
+                    <div key={index} className="flex items-center gap-3">
+                      {formData.category === 'qna' && (
+                        <label className="flex items-center justify-center cursor-pointer select-none" title="Mark as correct answer">
+                          <input
+                            type="checkbox"
+                            checked={correctAnswers.includes(index)}
+                            onChange={(e) => {
+                              if (e.target.checked) {
+                                setCorrectAnswers([...correctAnswers, index]);
+                              } else {
+                                setCorrectAnswers(correctAnswers.filter(i => i !== index));
+                              }
+                            }}
+                            className="w-5 h-5 rounded border-gray-600 text-emerald-500 focus:ring-emerald-500/30 bg-gray-800"
+                          />
+                        </label>
+                      )}
+
+                      <input
+                        type="text"
+                        value={option.text}
+                        onChange={(e) => {
+                          const newOpts = [...pollOptions];
+                          newOpts[index].text = e.target.value;
+                          setPollOptions(newOpts);
+                        }}
+                        required
+                        placeholder={`Option ${index + 1}`}
+                        className="flex-1 bg-white/5 text-white px-4 py-3 rounded-xl border border-gray-700/50 focus:border-emerald-500/50 focus:bg-white/10 focus:outline-none transition-all text-sm font-medium"
+                      />
+
+                      {pollOptions.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const newOpts = pollOptions.filter((_, i) => i !== index);
+                            setPollOptions(newOpts);
+                            const newCorrects = correctAnswers
+                              .filter(i => i !== index)
+                              .map(i => (i > index ? i - 1 : i));
+                            setCorrectAnswers(newCorrects);
+                          }}
+                          className="p-2 text-red-400 hover:text-red-300 hover:bg-white/5 rounded-lg transition-colors"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {pollOptions.length < 10 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setPollOptions([...pollOptions, { text: '' }]);
+                    }}
+                    className="w-full py-3 bg-white/5 hover:bg-white/10 border border-dashed border-white/10 hover:border-emerald-500/30 rounded-xl text-sm font-bold text-gray-300 hover:text-emerald-400 transition-all flex items-center justify-center gap-2"
+                  >
+                    + Add Option
+                  </button>
+                )}
+
+                {formData.category === 'qna' && correctAnswers.length === 0 && (
+                  <p className="text-xs text-amber-400/80 mt-2">
+                    ⚠️ Tip: Mark at least one correct answer using the checkbox.
+                  </p>
+                )}
               </div>
-            </div>
+            )}
+
+            {/* Content */}
+            {!['qna', 'polling'].includes(formData.category) && (
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
+                  Content
+                </label>
+                <textarea
+                  name="content"
+                  value={formData.content}
+                  onChange={handleChange}
+                  required={!['qna', 'polling'].includes(formData.category)}
+                  maxLength="5000"
+                  rows="8"
+                  className="w-full bg-white/5 text-white px-6 py-4 rounded-2xl border border-gray-700/50 focus:border-emerald-500/50 focus:bg-white/10 focus:outline-none transition-all resize-none placeholder-gray-600 leading-relaxed"
+                  placeholder="What's on your mind? Share your story, confession, or question..."
+                />
+                <div className="flex justify-end">
+                  <span className="text-xs text-gray-500 font-mono">
+                    {formData.content.length}/5000
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Tags */}
             <div className="space-y-2">
               <label className="text-sm font-bold text-gray-300 uppercase tracking-wider ml-1">
-                Tags (Optional)
+                #TAGS (OPTIONAL)
               </label>
               <div className="relative group">
                 <Tag className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-500 group-focus-within:text-emerald-500 transition-colors w-5 h-5" />
@@ -271,19 +380,19 @@ const CreatePost = () => {
             </div>
 
             {/* Anonymous Toggle */}
-            <div className={`flex flex-col sm:flex-row items-start sm:items-center justify-between p-4 sm:p-6 rounded-2xl border transition-all duration-300 gap-4 ${formData.isAnonymous
+            <div className={`flex flex-row items-center justify-between p-4 sm:p-6 rounded-2xl border transition-all duration-300 gap-4 ${formData.isAnonymous
               ? 'bg-emerald-900/10 border-emerald-500/30 shadow-[0_0_20px_rgba(16,185,129,0.05)]'
               : 'bg-white/5 border-white/5'
               }`}>
-              <div className="flex items-center space-x-4">
-                <div className={`p-3 rounded-xl ${formData.isAnonymous ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-400'}`}>
+              <div className="flex items-center space-x-3 sm:space-x-4 min-w-0">
+                <div className={`p-3 rounded-xl shrink-0 ${formData.isAnonymous ? 'bg-emerald-500/20 text-emerald-400' : 'bg-gray-800 text-gray-400'}`}>
                   {formData.isAnonymous ? <EyeOff className="w-6 h-6" /> : <Eye className="w-6 h-6" />}
                 </div>
-                <div>
-                  <h3 className={`font-bold text-lg ${formData.isAnonymous ? 'text-emerald-400' : 'text-gray-200'}`}>
+                <div className="min-w-0 flex-1">
+                  <h3 className={`font-bold text-base sm:text-lg ${formData.isAnonymous ? 'text-emerald-400' : 'text-gray-200'}`}>
                     {formData.isAnonymous ? 'Anonymous Mode' : 'Public Post'}
                   </h3>
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-gray-500 text-xs sm:text-sm leading-snug">
                     {formData.isAnonymous
                       ? 'Your identity will be completely hidden.'
                       : 'Your name and profile will be visible.'
@@ -291,7 +400,7 @@ const CreatePost = () => {
                   </p>
                 </div>
               </div>
-              <label className="relative inline-flex items-center cursor-pointer">
+              <label className="relative inline-flex items-center cursor-pointer shrink-0">
                 <input
                   type="checkbox"
                   name="isAnonymous"
@@ -299,7 +408,7 @@ const CreatePost = () => {
                   onChange={handleChange}
                   className="sr-only peer"
                 />
-                <div className="w-14 h-8 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-6 after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-emerald-500 peer-checked:to-teal-500 border border-gray-600"></div>
+                <div className="w-12 sm:w-14 h-7 sm:h-8 bg-gray-700 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[3px] sm:after:top-[4px] after:left-[3px] sm:after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 sm:after:h-6 after:w-5 sm:after:w-6 after:transition-all peer-checked:bg-gradient-to-r peer-checked:from-emerald-500 peer-checked:to-teal-500 border border-gray-600"></div>
               </label>
             </div>
 
@@ -313,8 +422,8 @@ const CreatePost = () => {
                   <div className="w-16 h-16 bg-gray-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform shadow-lg">
                     <Image className="w-8 h-8 text-gray-400 group-hover:text-emerald-400 transition-colors" />
                   </div>
-                  <span className="text-sm font-medium group-hover:text-emerald-300 transition-colors">Click to upload images</span>
-                  <span className="text-xs text-gray-600 mt-1">JPG, PNG up to 5MB each</span>
+                  <span className="text-sm font-medium group-hover:text-emerald-300 transition-colors">Click To Upload Images</span>
+                  <span className="text-xs text-gray-600 mt-1">JPG or PNG up to 5MB each</span>
                   <input
                     type="file"
                     accept="image/*"
@@ -328,15 +437,15 @@ const CreatePost = () => {
                   <div className={`${selectedImages.length === 1 ? '' : 'grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4'}`}>
                     {selectedImages.map((image, index) => (
                       <div key={index} className={`relative group overflow-hidden glass-card rounded-2xl ${selectedImages.length === 1
-                          ? 'w-full max-w-2xl mx-auto'
-                          : 'aspect-square'
+                        ? 'w-full max-w-2xl mx-auto'
+                        : 'aspect-square'
                         }`}>
                         <img
                           src={image.url}
                           alt={`Preview ${index + 1}`}
                           className={`w-full object-cover ${selectedImages.length === 1
-                              ? 'h-auto max-h-[500px] object-contain bg-black/5'
-                              : 'h-full'
+                            ? 'h-auto max-h-[500px] object-contain bg-black/5'
+                            : 'h-full'
                             }`}
                         />
                         <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
@@ -355,25 +464,26 @@ const CreatePost = () => {
               </div>
             </div>
 
-            {/* Submit Button */}
-            <div className="flex items-center justify-between pt-8 border-t border-gray-700/30">
-              <button
-                type="button"
-                onClick={() => navigate('/')}
-                className="px-8 py-3 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors font-bold"
-              >
-                Cancel
-              </button>
+            {/* Action Buttons: Publish Post first, Cancel second, in separate rows with reduced width */}
+            <div className="flex flex-col items-center gap-3 pt-8 border-t border-gray-700/30">
               <button
                 type="submit"
-                disabled={loading || !formData.title || !formData.content || !formData.category}
-                className="w-full sm:w-auto relative overflow-hidden bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-8 sm:px-10 py-4 rounded-xl font-bold text-lg shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-1 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
+                disabled={loading || !formData.title || (!['qna', 'polling'].includes(formData.category) && !formData.content) || !formData.category}
+                className="w-full max-w-xs relative overflow-hidden bg-gradient-to-r from-emerald-500 to-cyan-500 text-white px-6 py-3.5 rounded-xl font-bold text-base shadow-lg hover:shadow-emerald-500/40 hover:-translate-y-0.5 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed group"
               >
                 <span className="relative z-10 flex items-center justify-center gap-2">
                   {loading ? 'Publishing...' : 'Publish Post'}
                   {!loading && <Send className="w-5 h-5 group-hover:translate-x-1 transition-transform" />}
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-cyan-500 to-emerald-500 opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => navigate('/')}
+                className="w-full max-w-xs py-2.5 rounded-xl text-gray-400 hover:text-white hover:bg-white/5 transition-colors font-bold text-sm text-center"
+              >
+                Cancel
               </button>
             </div>
           </form>

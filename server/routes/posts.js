@@ -32,7 +32,8 @@ router.get('/trending/hashtags', async (req, res) => {
 
     const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
 
-    const trendingTags = await Post.aggregate([
+    // Try recent hashtags first
+    let trendingTags = await Post.aggregate([
       {
         $match: {
           createdAt: { $gte: sevenDaysAgo },
@@ -59,6 +60,36 @@ router.get('/trending/hashtags', async (req, res) => {
         }
       }
     ]);
+
+    // If recent hashtags are fewer than 3, fall back to all-time hashtags
+    if (trendingTags.length < 3) {
+      trendingTags = await Post.aggregate([
+        {
+          $match: {
+            $or: [
+              { status: 'PUBLISHED' },
+              { status: { $exists: false }, moderationStatus: 'approved' }
+            ]
+          }
+        },
+        { $unwind: '$tags' },
+        {
+          $group: {
+            _id: '$tags',
+            count: { $sum: 1 }
+          }
+        },
+        { $sort: { count: -1 } },
+        { $limit: parseInt(limit) },
+        {
+          $project: {
+            tag: '$_id',
+            count: 1,
+            _id: 0
+          }
+        }
+      ]);
+    }
 
     res.json(trendingTags);
   } catch (error) {
@@ -127,6 +158,93 @@ router.get('/', optionalAuth, async (req, res) => {
       query.$text = { $search: search };
     }
 
+    if (sortBy === 'random') {
+      const posts = await Post.aggregate([
+        { $match: query },
+        { $sample: { size: parseInt(limit) } },
+        {
+          $lookup: {
+            from: 'users',
+            localField: 'author',
+            foreignField: '_id',
+            as: 'author'
+          }
+        },
+        { $unwind: { path: '$author', preserveNullAndEmptyArrays: true } }
+      ]);
+
+      const processedPosts = posts.map(post => {
+        // Calculate reaction counts
+        const reactionCounts = { like: 0, love: 0, haha: 0, wow: 0, sad: 0, angry: 0 };
+        (post.reactions || []).forEach(r => {
+          reactionCounts[r.type] = (reactionCounts[r.type] || 0) + 1;
+        });
+
+        // Find user's reaction if authenticated
+        let userReaction = null;
+        if (req.userId) {
+          const userReact = (post.reactions || []).find(
+            r => r.user && r.user.toString() === req.userId.toString()
+          );
+          userReaction = userReact?.type || null;
+        }
+
+        // Check if user has voted on the poll (for random sort path)
+        let userPollVote = null;
+        let hasVoted = false;
+        if (post.postType === 'polling' || post.postType === 'qna') {
+          const votedIndices = [];
+          (post.pollOptions || []).forEach((opt, idx) => {
+            const hasVotedThisOpt = req.userId && (opt.votes || []).some(v => v && v.toString() === req.userId.toString());
+            if (hasVotedThisOpt) {
+              votedIndices.push(idx);
+              hasVoted = true;
+            }
+          });
+          if (votedIndices.length > 0) {
+            userPollVote = post.postType === 'polling' ? votedIndices[0] : votedIndices;
+          }
+        }
+
+        const isAuthor = req.userId && post.author && (post.author._id ? post.author._id.toString() : post.author.toString()) === req.userId.toString();
+        const showCorrectAnswers = hasVoted || isAuthor;
+
+        return {
+          ...post,
+          author: post.isAnonymous ? null : {
+            _id: post.author?._id,
+            name: post.author?.name,
+            studentId: post.author?.studentId,
+            year: post.author?.year,
+            branch: post.author?.branch,
+            avatar: post.author?.avatar
+          },
+          upvoteCount: post.upvotes?.length || 0,
+          downvoteCount: post.downvotes?.length || 0,
+          reactionCounts,
+          totalReactions: (post.reactions || []).length,
+          userReaction,
+          // Q&A / Polling additions
+          pollOptions: (post.pollOptions || []).map(opt => ({
+            _id: opt._id,
+            text: opt.text,
+            voteCount: (opt.votes || []).length
+          })),
+          correctAnswers: (post.postType === 'qna' && !showCorrectAnswers) ? [] : (post.correctAnswers || []),
+          userPollVote
+        };
+      });
+
+      const totalCount = await Post.countDocuments(query);
+
+      return res.json({
+        posts: processedPosts,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: parseInt(page),
+        total: totalCount
+      });
+    }
+
     const posts = await Post.find(query)
       .populate('author', 'name studentId year branch avatar')
       .sort({ [sortBy]: sortOrder === 'desc' ? -1 : 1 })
@@ -147,10 +265,30 @@ router.get('/', optionalAuth, async (req, res) => {
       let userReaction = null;
       if (req.userId) {
         const userReact = (post.reactions || []).find(
-          r => r.user.toString() === req.userId.toString()
+          r => r.user && r.user.toString() === req.userId.toString()
         );
         userReaction = userReact?.type || null;
       }
+
+      // Check if user has voted on the poll
+      let userPollVote = null;
+      let hasVoted = false;
+      if (post.postType === 'polling' || post.postType === 'qna') {
+        const votedIndices = [];
+        (post.pollOptions || []).forEach((opt, idx) => {
+          const hasVotedThisOpt = req.userId && (opt.votes || []).some(v => v && v.toString() === req.userId.toString());
+          if (hasVotedThisOpt) {
+            votedIndices.push(idx);
+            hasVoted = true;
+          }
+        });
+        if (votedIndices.length > 0) {
+          userPollVote = post.postType === 'polling' ? votedIndices[0] : votedIndices;
+        }
+      }
+
+      const isAuthor = req.userId && post.author && (post.author._id ? post.author._id.toString() : post.author.toString()) === req.userId.toString();
+      const showCorrectAnswers = hasVoted || isAuthor;
 
       return {
         ...post,
@@ -159,7 +297,16 @@ router.get('/', optionalAuth, async (req, res) => {
         downvoteCount: post.downvotes?.length || 0,
         reactionCounts,
         totalReactions: (post.reactions || []).length,
-        userReaction
+        userReaction,
+
+        // Q&A / Polling additions
+        pollOptions: (post.pollOptions || []).map(opt => ({
+          _id: opt._id,
+          text: opt.text,
+          voteCount: opt.votes?.length || 0
+        })),
+        correctAnswers: (post.postType === 'qna' && !showCorrectAnswers) ? [] : (post.correctAnswers || []),
+        userPollVote
       };
     });
 
@@ -185,9 +332,8 @@ router.get('/:id', optionalAuth, async (req, res) => {
       return res.status(404).json({ message: 'Post not found' });
     }
 
-    // Increment view count
-    post.viewCount += 1;
-    await post.save();
+    // Increment view count without triggering full validation on old documents
+    await Post.findByIdAndUpdate(req.params.id, { $inc: { viewCount: 1 } });
 
     // Calculate reaction counts
     const reactionCounts = { like: 0, love: 0, haha: 0, wow: 0, sad: 0, angry: 0 };
@@ -199,10 +345,30 @@ router.get('/:id', optionalAuth, async (req, res) => {
     let userReaction = null;
     if (req.userId) {
       const userReact = (post.reactions || []).find(
-        r => r.user.toString() === req.userId.toString()
+        r => r.user && r.user.toString() === req.userId.toString()
       );
       userReaction = userReact?.type || null;
     }
+
+    // Check if user has voted on the poll
+    let userPollVote = null;
+    let hasVoted = false;
+    if (post.postType === 'polling' || post.postType === 'qna') {
+      const votedIndices = [];
+      (post.pollOptions || []).forEach((opt, idx) => {
+        const hasVotedThisOpt = req.userId && (opt.votes || []).some(v => v && v.toString() === req.userId.toString());
+        if (hasVotedThisOpt) {
+          votedIndices.push(idx);
+          hasVoted = true;
+        }
+      });
+      if (votedIndices.length > 0) {
+        userPollVote = post.postType === 'polling' ? votedIndices[0] : votedIndices;
+      }
+    }
+
+    const isAuthor = req.userId && post.author && (post.author._id ? post.author._id.toString() : post.author.toString()) === req.userId.toString();
+    const showCorrectAnswers = hasVoted || isAuthor;
 
     const processedPost = {
       ...post.toObject(),
@@ -211,7 +377,16 @@ router.get('/:id', optionalAuth, async (req, res) => {
       downvoteCount: post.downvotes?.length || 0,
       reactionCounts,
       totalReactions: (post.reactions || []).length,
-      userReaction
+      userReaction,
+
+      // Q&A / Polling additions
+      pollOptions: (post.pollOptions || []).map(opt => ({
+        _id: opt._id,
+        text: opt.text,
+        voteCount: opt.votes?.length || 0
+      })),
+      correctAnswers: (post.postType === 'qna' && !showCorrectAnswers) ? [] : (post.correctAnswers || []),
+      userPollVote
     };
 
     res.json(processedPost);
@@ -226,7 +401,7 @@ router.get('/:id', optionalAuth, async (req, res) => {
 // ============================================
 router.post('/', auth, upload.array('images', 5), async (req, res) => {
   try {
-    const { title, content, category, tags, isAnonymous, eventDate } = req.body;
+    const { title, content, category, tags, isAnonymous, eventDate, pollOptions, correctAnswers } = req.body;
 
     console.log('📝 Create Post Request Received');
     console.log('   Content-Type:', req.headers['content-type']);
@@ -237,7 +412,7 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
     );
 
     // --- AI MODERATION ---
-    const textToAnalyze = `${title}\n${content}`;
+    const textToAnalyze = `${title}\n${content || ''}`;
     console.log('Analyzing content for moderation...');
 
     const moderationResult = await moderateText(textToAnalyze);
@@ -293,9 +468,37 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
 
     console.log('📎 Attachments to save:', JSON.stringify(cleanAttachments, null, 2));
 
+    let parsedPollOptions = [];
+    if (category === 'qna' || category === 'polling') {
+      try {
+        if (pollOptions) {
+          const rawOptions = typeof pollOptions === 'string'
+            ? JSON.parse(pollOptions)
+            : pollOptions;
+          parsedPollOptions = rawOptions.map(opt => ({ text: opt.text, votes: [] }));
+        }
+      } catch (err) {
+        console.error('Error parsing poll options:', err);
+      }
+    }
+
+    let parsedCorrectAnswers = [];
+    if (category === 'qna') {
+      try {
+        if (correctAnswers) {
+          parsedCorrectAnswers = typeof correctAnswers === 'string'
+            ? JSON.parse(correctAnswers)
+            : correctAnswers;
+          parsedCorrectAnswers = parsedCorrectAnswers.map(Number);
+        }
+      } catch (err) {
+        console.error('Error parsing correct answers:', err);
+      }
+    }
+
     const post = new Post({
       title: title.trim(),
-      content: content.trim(),
+      content: (content || '').trim() || (category === 'qna' ? 'Q&A' : category === 'polling' ? 'Poll' : ''),
       author: req.userId,
       category,
       tags: allTags,
@@ -314,7 +517,15 @@ router.post('/', auth, upload.array('images', 5), async (req, res) => {
       },
 
       // Keep old field for backward compatibility
-      moderationStatus: status === 'PUBLISHED' ? 'approved' : 'flagged'
+      moderationStatus: status === 'PUBLISHED' ? 'approved' : 'flagged',
+
+      // Q&A / Polling fields
+      postType: ['qna', 'polling'].includes(category) ? category : 'normal',
+      pollOptions: parsedPollOptions,
+      correctAnswers: parsedCorrectAnswers,
+      pollSettings: {
+        allowMultiple: category === 'qna'
+      }
     });
 
     await post.save();
@@ -602,6 +813,73 @@ router.post('/:id/report', auth, async (req, res) => {
     res.json({ message: 'Post reported successfully' });
   } catch (error) {
     console.error('Report post error:', error);
+    res.status(500).json({ message: 'Server error' });
+  }
+});
+
+// Register poll or Q&A votes
+router.post('/:id/poll-vote', auth, async (req, res) => {
+  try {
+    const { optionIndices } = req.body; // Array of option indices (numbers)
+    const post = await Post.findById(req.params.id);
+
+    if (!post) {
+      return res.status(404).json({ message: 'Post not found' });
+    }
+
+    // Support both postType field (new) and category field (backward compat for old posts)
+    const isValidPollPost = ['polling', 'qna'].includes(post.postType) ||
+      ['polling', 'qna'].includes(post.category);
+    if (!isValidPollPost) {
+      return res.status(400).json({ message: 'This post is not a poll or Q&A' });
+    }
+
+    if (!Array.isArray(optionIndices) || optionIndices.length === 0) {
+      return res.status(400).json({ message: 'Please select at least one option' });
+    }
+
+    // Check if the user has already voted on this post
+    const alreadyVoted = post.pollOptions.some(opt =>
+      (opt.votes || []).some(v => v.toString() === req.userId.toString())
+    );
+
+    if (alreadyVoted) {
+      return res.status(400).json({ message: 'You have already voted on this poll' });
+    }
+
+    // For single-choice polling, only allow 1 option (check both postType and category)
+    const isPollingType = post.postType === 'polling' ||
+      (post.postType === 'normal' && post.category === 'polling');
+    if (isPollingType && optionIndices.length > 1) {
+      return res.status(400).json({ message: 'Only one choice is allowed for this poll' });
+    }
+
+    // Validate indices range
+    for (const index of optionIndices) {
+      const idx = parseInt(index);
+      if (isNaN(idx) || idx < 0 || idx >= post.pollOptions.length) {
+        return res.status(400).json({ message: 'Invalid option index chosen' });
+      }
+      post.pollOptions[idx].votes.push(req.userId);
+    }
+
+    await post.save();
+
+    // Prepare response options with updated counts
+    const pollOptions = post.pollOptions.map(opt => ({
+      _id: opt._id,
+      text: opt.text,
+      voteCount: opt.votes.length
+    }));
+
+    res.json({
+      message: 'Vote submitted successfully!',
+      pollOptions,
+      correctAnswers: post.correctAnswers || [],
+      userPollVote: isPollingType ? optionIndices[0] : optionIndices
+    });
+  } catch (error) {
+    console.error('Poll vote error:', error);
     res.status(500).json({ message: 'Server error' });
   }
 });

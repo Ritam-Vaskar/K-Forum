@@ -5,7 +5,6 @@ import { auth } from '../middleware/auth.js';
 import emailService from '../services/emailService.js';
 import dotenv from 'dotenv';
 import admin from 'firebase-admin';
-import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -17,19 +16,32 @@ const __dirname = path.dirname(__filename);
 // ── Firebase Admin init (done once, guarded so hot-reloads don't error) ──────
 if (!admin.apps.length) {
   try {
-    const serviceAccountPath = path.resolve(__dirname, '../serviceAccountKey.json');
     console.log('--- Firebase Admin Initialization ---');
-    console.log('Looking for service account at:', serviceAccountPath);
-
-    if (fs.existsSync(serviceAccountPath)) {
-      const serviceAccount = JSON.parse(fs.readFileSync(serviceAccountPath, 'utf8'));
+    
+    // 1. Try individual environment variables (Best for Production)
+    if (process.env.FIREBASE_PROJECT_ID && process.env.FIREBASE_CLIENT_EMAIL && process.env.FIREBASE_PRIVATE_KEY) {
+      admin.initializeApp({
+        credential: admin.credential.cert({
+          projectId: process.env.FIREBASE_PROJECT_ID,
+          clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+          private_key: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n'),
+        })
+      });
+      console.log('✅ Firebase Admin initialized from individual Environment Variables');
+    } 
+    // 2. Fallback to Full JSON String in env
+    else if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
       admin.initializeApp({
         credential: admin.credential.cert(serviceAccount)
       });
-      console.log('✅ Firebase Admin initialized successfully');
-    } else {
-      console.warn('⚠️  Firebase Admin: serviceAccountKey.json NOT FOUND at', serviceAccountPath);
+      console.log('✅ Firebase Admin initialized from FIREBASE_SERVICE_ACCOUNT env var');
+    } 
+    // No credentials found
+    else {
+      console.error('❌ Firebase Admin: No credentials found in environment variables (FIREBASE_PROJECT_ID, etc. or FIREBASE_SERVICE_ACCOUNT)!');
     }
+
   } catch (e) {
     console.error('❌ Firebase Admin Initialization ERROR:', e.message);
   }
@@ -69,11 +81,22 @@ router.post('/firebase', async (req, res) => {
 
     if (!user) {
       console.log('4. User not found. Creating new Google account...');
-      // Create new Google user (no password / studentId required)
+      
+      // Auto-generate a clean unique studentId handle for Google users
+      const cleanHandle = (name || email.split('@')[0]).toLowerCase().replace(/[^a-z0-9]/g, '') || 'user';
+      const randomDigits = Math.floor(1000 + Math.random() * 9000);
+      let initialStudentId = `${cleanHandle}_${randomDigits}`;
+
+      const existingHandle = await User.findOne({ studentId: initialStudentId });
+      if (existingHandle) {
+        initialStudentId = `${cleanHandle}_${Date.now().toString().slice(-4)}`;
+      }
+
       user = new User({
         name: name || email.split('@')[0],
         email,
         googleId: uid,
+        studentId: initialStudentId,
         authProvider: 'google',
         avatar: picture || '',
         isVerified: true,     // Google already verified the email
@@ -86,6 +109,10 @@ router.post('/firebase', async (req, res) => {
       user.googleId = uid;
       user.authProvider = 'google';
       if (picture && !user.avatar) user.avatar = picture;
+      if (!user.studentId) {
+        const cleanHandle = (user.name || user.email.split('@')[0]).toLowerCase().replace(/[^a-z0-9]/g, '') || 'user';
+        user.studentId = `${cleanHandle}_${Math.floor(1000 + Math.random() * 9000)}`;
+      }
       user.isVerified = true;
       await user.save();
       console.log('5. Local user linked:', user._id);
@@ -114,6 +141,7 @@ router.post('/firebase', async (req, res) => {
         branch: user.branch,
         avatar: user.avatar,
         role: user.role,
+        isAdmin: user.role === 'admin',
         authProvider: user.authProvider,
       }
     });
@@ -217,6 +245,7 @@ router.post('/verify-otp', async (req, res) => {
         year: user.year,
         branch: user.branch,
         role: user.role,
+        isAdmin: user.role === 'admin',
         reputation: user.reputation
       }
     });
@@ -279,6 +308,7 @@ router.post('/login', async (req, res) => {
         year: user.year,
         branch: user.branch,
         role: user.role,
+        isAdmin: user.role === 'admin',
         reputation: user.reputation
       }
     });
@@ -299,7 +329,8 @@ router.get('/me', auth, async (req, res) => {
     // Return user with id field for frontend consistency
     res.json({
       ...user.toObject(),
-      id: user._id
+      id: user._id,
+      isAdmin: user.role === 'admin'
     });
   } catch (error) {
     console.error('Get user error:', error);

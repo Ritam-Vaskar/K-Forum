@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
@@ -15,11 +15,13 @@ import UserProfile from './pages/UserProfile';
 import Admin from './pages/Admin';
 import BuddyConnectPage from './pages/BuddyConnectPage';
 import Wordle from './pages/Wordle';
+import Chat from './pages/Chat';
 
 import CalendarPage from './pages/CalendarPage';
 import ProtectedRoute from './components/Auth/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
 import SplashScreen from './components/SplashScreen';
+import { autoClearCache } from './utils/cacheCleaner';
 
 // Separate component to use Router context if needed
 const MainContainer = () => {
@@ -64,6 +66,14 @@ const MainContainer = () => {
             </ProtectedRoute>
           }
         />
+        <Route
+          path="/messages"
+          element={
+            <ProtectedRoute>
+              <Chat />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/calendar" element={<CalendarPage />} />
         <Route path="/buddy-connect" element={<BuddyConnectPage />} />
         <Route
@@ -92,6 +102,10 @@ const MainContainer = () => {
 function App() {
   const [showSplash, setShowSplash] = useState(true);
   const handleSplashFinish = useCallback(() => setShowSplash(false), []);
+
+  useEffect(() => {
+    autoClearCache();
+  }, []);
 
   return (
     <AuthProvider>

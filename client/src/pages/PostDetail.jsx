@@ -5,6 +5,7 @@ import axios from '../services/axiosSetup';
 import toast from 'react-hot-toast';
 import { MessageCircle, Eye, Clock, User, Send, MoreVertical, Flag, Trash2, Image, X, ArrowUp, ArrowDown, ArrowLeft } from 'lucide-react';
 import PostReactions from '../components/Posts/PostReactions';
+import PollDisplay from '../components/Posts/PollDisplay';
 import ImageViewer from '../components/ImageViewer';
 
 const PostDetail = () => {
@@ -101,7 +102,7 @@ const PostDetail = () => {
   };
 
   const handleDeletePost = async () => {
-    if (!user || (user._id !== post.author._id && !user.isAdmin)) {
+    if (!user || (user._id !== post.author._id && user.role !== 'admin')) {
       toast.error('You do not have permission to delete this post');
       return;
     }
@@ -271,7 +272,9 @@ const PostDetail = () => {
       internships: 'bg-[#17d059]',
       'lost-found': 'bg-yellow-500',
       clubs: 'bg-indigo-500',
-      general: 'bg-gray-500'
+      general: 'bg-gray-500',
+      qna: 'bg-amber-500',
+      polling: 'bg-emerald-500'
     };
     return colors[category] || 'bg-gray-500';
   };
@@ -381,19 +384,28 @@ const PostDetail = () => {
                 <div className="w-12 h-12 bg-gradient-to-r from-[#17d059] to-emerald-600 rounded-full flex items-center justify-center">
                   <User className="w-6 h-6 text-white" />
                 </div>
-                <div>
-                  <p className="text-white font-medium">
-                    {post.author ? `${post.author.name} (${post.author.studentId})` : 'Anonymous'}
-                  </p>
-                  <p className="text-gray-400 text-sm flex items-center">
-                    <Clock className="w-4 h-4 mr-1" />
+                <div className="flex flex-col">
+                  <span className="text-white font-semibold">
+                    {post.author ? (
+                      <Link to={`/user/${post.author._id}`} className="hover:text-[#17d059] transition-colors">
+                        {post.author.name}
+                      </Link>
+                    ) : 'Anonymous'}
+                  </span>
+                  {post.author && (
+                    <span className="text-xs text-gray-400 font-mono mt-0.5">
+                      @{post.author.studentId}
+                    </span>
+                  )}
+                  <span className="text-gray-400 text-xs mt-1 flex items-center">
+                    <Clock className="w-3.5 h-3.5 mr-1" />
                     {formatTime(post.createdAt)}
-                  </p>
+                  </span>
                 </div>
               </div>
               <div className="flex items-center space-x-2">
                 <span className={`px-3 py-1 rounded-full text-xs font-medium text-white ${getCategoryColor(post.category)}`}>
-                  {post.category.replace('-', ' ').toUpperCase()}
+                  {(post.category || 'general').replace('-', ' ').toUpperCase()}
                 </span>
                 <div className="relative z-20">
                   <button
@@ -411,7 +423,7 @@ const PostDetail = () => {
                         <Flag className="w-4 h-4" />
                         <span>Report Post</span>
                       </button>
-                      {user && post.author && (user._id === post.author._id || user.isAdmin) && (
+                      {user && post.author && (user._id === post.author._id || user.role === 'admin') && (
                         <button
                           onClick={handleDeletePost}
                           className="w-full px-4 py-2 text-left text-red-400 hover:bg-gray-700 flex items-center space-x-2 rounded-b-lg"
@@ -430,9 +442,22 @@ const PostDetail = () => {
           <h1 className="text-3xl font-bold text-white mb-4">{post.title}</h1>
 
           <div className="space-y-6">
-            <div className="text-gray-300 mb-6 whitespace-pre-wrap">
-              {post.content}
-            </div>
+            {!['qna', 'polling'].includes(post.category) && (
+              <div className="text-gray-300 mb-6 whitespace-pre-wrap">
+                {post.content}
+              </div>
+            )}
+
+            {/* Q&A / Polling display */}
+            {['qna', 'polling'].includes(post.category) && (
+              (() => {
+                try {
+                  return <PollDisplay post={post} />;
+                } catch (e) {
+                  return <div className="text-xs text-gray-500 mt-2">Poll unavailable.</div>;
+                }
+              })()
+            )}
 
             {/* Image attachments */}
             {post.attachments && post.attachments.length > 0 && (
@@ -554,7 +579,6 @@ const PostDetail = () => {
             <span>{post.viewCount || 0}</span>
           </div>
         </div>
-      </div >
 
       {/* Add Comment */}
       {
@@ -713,7 +737,7 @@ const PostDetail = () => {
                         <Flag className="w-4 h-4" />
                         <span>Report Comment</span>
                       </button>
-                      {user && (user._id === (comment.author?._id) || user.isAdmin) && (
+                      {user && (user._id === (comment.author?._id) || user.role === 'admin') && (
                         <button
                           onClick={() => handleDeleteComment(comment._id)}
                           className="w-full px-4 py-2 text-left text-red-400 hover:bg-white/5 flex items-center space-x-2"
@@ -731,15 +755,16 @@ const PostDetail = () => {
         )}
       </div>
 
-      {/* Image Viewer — works for both post and comment images */}
-      {showImageViewer && (
-        <ImageViewer
-          images={viewerImages}
-          initialIndex={selectedImageIndex}
-          onClose={() => setShowImageViewer(false)}
-        />
-      )}
-    </div >
+        {/* Image Viewer — works for both post and comment images */}
+        {showImageViewer && (
+          <ImageViewer
+            images={viewerImages}
+            initialIndex={selectedImageIndex}
+            onClose={() => setShowImageViewer(false)}
+          />
+        )}
+      </div>
+    </div>
   );
 };
 
